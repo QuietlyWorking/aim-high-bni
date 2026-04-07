@@ -13,6 +13,9 @@ export interface Testimonial {
   is_featured: boolean;
   display_order: number;
   source_date: string | null;
+  about_member_id: string | null;
+  about_member_slug: string | null;
+  about_member_name: string | null;
 }
 
 export function useTestimonials(featuredOnly = false) {
@@ -34,5 +37,22 @@ export function useTestimonials(featuredOnly = false) {
       return data as Testimonial[];
     },
     enabled: !!AIM_HIGH_ORG_ID,
+  });
+}
+
+export function useMemberTestimonials(memberSlug: string | undefined) {
+  return useQuery({
+    queryKey: ["memberTestimonials", memberSlug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("public_chapter_testimonials")
+        .select("*")
+        .eq("organization_id", AIM_HIGH_ORG_ID)
+        .eq("about_member_slug", memberSlug)
+        .order("display_order");
+      if (error) throw error;
+      return data as Testimonial[];
+    },
+    enabled: !!memberSlug && !!AIM_HIGH_ORG_ID,
   });
 }

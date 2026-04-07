@@ -116,9 +116,6 @@ export default function Index() {
       <section className="py-16 md:py-24 bg-ah-gray">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-sm font-medium text-ah-red uppercase tracking-wider mb-2">
-              What our members say
-            </p>
             <h2 className="text-3xl md:text-4xl font-bold text-ah-dark">
               What people are saying
             </h2>
@@ -127,24 +124,9 @@ export default function Index() {
             {(testimonials || []).slice(0, 6).map((t) => (
               <div key={t.id} className="bg-white rounded-xl p-6 shadow-sm">
                 <Quote className="w-8 h-8 text-ah-red/20 mb-3" />
-                <p className="text-ah-dark text-sm leading-relaxed mb-4">
+                <p className="text-ah-dark text-sm leading-relaxed">
                   "{t.quote}"
                 </p>
-                <div className="flex items-center gap-3">
-                  {t.author_headshot_url ? (
-                    <img src={t.author_headshot_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 bg-ah-red/10 rounded-full flex items-center justify-center">
-                      <span className="text-ah-red font-semibold text-sm">
-                        {t.author_name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                  <div>
-                    <div className="text-sm font-medium text-ah-dark">{t.author_name}</div>
-                    <div className="text-xs text-ah-gray-text">{t.context || "Aim High BNI Member"}</div>
-                  </div>
-                </div>
               </div>
             ))}
           </div>
