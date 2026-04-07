@@ -23,6 +23,8 @@ export interface Member {
   role: string;
   status: string;
   join_date: string | null;
+  card_jpg_url: string | null;
+  card_generated_at: string | null;
   public_profile: boolean;
   public_phone: boolean;
   public_email: boolean;
