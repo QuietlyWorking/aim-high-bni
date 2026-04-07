@@ -16,6 +16,10 @@ jobs:
           cache: 'npm'
       - run: npm install
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_AIM_HIGH_ORG_ID: ${{ secrets.VITE_AIM_HIGH_ORG_ID }}
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
