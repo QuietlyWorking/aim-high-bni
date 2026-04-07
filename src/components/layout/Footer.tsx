@@ -10,7 +10,7 @@ export default function Footer() {
               AIM HIGH <span className="text-ah-red">BNI</span>
             </h3>
             <p className="text-gray-400 text-sm">
-              Orange County's premier networking chapter. Building relationships,
+              Orange County's premier networking chapter. Every Thursday at 11:30 AM, online via Zoom. Building relationships,
               exchanging referrals, and growing together.
             </p>
           </div>

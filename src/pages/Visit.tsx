@@ -44,11 +44,11 @@ export default function Visit() {
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
                 <Calendar className="w-4 h-4 text-ah-red" />
-                <span>Every Wednesday</span>
+                <span>Every Thursday</span>
               </div>
               <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
                 <Clock className="w-4 h-4 text-ah-red" />
-                <span>8:30 AM &mdash; 10:00 AM PT</span>
+                <span>11:30 AM PT</span>
               </div>
               <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
                 <MapPin className="w-4 h-4 text-ah-red" />

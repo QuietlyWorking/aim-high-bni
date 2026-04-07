@@ -46,7 +46,7 @@ export default function Index() {
             Visit a Meeting <ArrowRight className="w-5 h-5" />
           </Link>
           <p className="text-sm text-gray-400 mt-4">
-            Every Wednesday, 8:30 AM &mdash; Online via Zoom
+            Every Thursday, 11:30 AM &nbsp;|&nbsp; Online via Zoom
           </p>
         </div>
       </section>
