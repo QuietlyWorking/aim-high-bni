@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Mail, Phone, Linkedin, Globe, Instagram, Quote, Heart, Send, Copy, Download, Share2, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail, Phone, Linkedin, Globe, Instagram, Quote, Heart, Send } from "lucide-react";
 import { useMember } from "@/hooks/useMembers";
 import { useMemberTestimonials } from "@/hooks/useTestimonials";
 import { useMemberRecognitions } from "@/hooks/useRecognitions";
@@ -12,9 +12,6 @@ export default function MemberProfile() {
   const { data: recognitions } = useMemberRecognitions(slug);
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const cardLink = slug ? `https://aimhighbni.com/card/${slug}` : "";
 
   const allQuotes = [
     ...(testimonials || []).map((t) => ({ text: t.quote, source: "testimonial" as const })),
@@ -133,51 +130,6 @@ export default function MemberProfile() {
             </div>
           </div>
         </div>
-
-        {/* Virtual Business Card */}
-        {member.card_jpg_url && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold text-ah-dark mb-4 flex items-center gap-2">
-              <Share2 className="w-5 h-5 text-ah-red" />
-              {member.first_name}'s Card
-            </h2>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <img
-                src={member.card_jpg_url}
-                alt={`${member.full_name} business card`}
-                className="w-full max-w-lg rounded-lg shadow-md mx-auto"
-              />
-              <div className="flex flex-wrap gap-3 justify-center mt-6">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(cardLink).then(() => {
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
-                    });
-                  }}
-                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                    copied
-                      ? "bg-green-500 text-white"
-                      : "bg-ah-red text-white hover:bg-ah-red-dark"
-                  }`}
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {copied ? "Copied!" : "Copy Share Link"}
-                </button>
-                <a
-                  href={member.card_jpg_url}
-                  download={`${member.slug}-card.jpg`}
-                  className="inline-flex items-center gap-2 bg-ah-gray text-ah-dark px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
-                >
-                  <Download className="w-4 h-4" /> Download JPG
-                </a>
-              </div>
-              <p className="text-xs text-ah-gray-text text-center mt-3">
-                Share this link anywhere — we'll track every click so {member.first_name} gets credit.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Testimonials & Recognitions */}
         {allQuotes.length > 0 && (
