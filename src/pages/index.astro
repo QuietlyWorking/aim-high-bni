@@ -262,13 +262,13 @@ const statItems = [
             <h3 class="text-sm font-semibold text-ah-gray-text uppercase tracking-wider">Chapter Leadership</h3>
             <div class="h-px bg-gray-300 flex-1"></div>
           </div>
-          <div class="grid grid-cols-3 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+          <div class="grid grid-cols-3 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
             {leadershipTiers[0].members.map((lm) => {
               const m = members.find((mem) => mem.slug === lm.slug);
               if (!m) return null;
               return (
                 <a href={`/members/${m.slug}`} class="text-center group">
-                  <div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
+                  <div class="w-28 h-28 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
                     {m.headshot_url ? (
                       <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
                     ) : (
@@ -298,13 +298,13 @@ const statItems = [
               <h3 class="text-xs font-medium text-ah-gray-text uppercase tracking-wider">{tier.label}</h3>
               <div class="h-px bg-gray-200 flex-1"></div>
             </div>
-            <div class="flex flex-wrap justify-center gap-6">
+            <div class="flex flex-wrap justify-center gap-8">
               {tier.members.map((lm) => {
                 const m = members.find((mem) => mem.slug === lm.slug);
                 if (!m) return null;
                 return (
-                  <a href={`/members/${m.slug}`} class="text-center group w-28">
-                    <div class="w-20 h-20 mx-auto mb-2 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
+                  <a href={`/members/${m.slug}`} class="text-center group w-32">
+                    <div class="w-28 h-28 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
                       {m.headshot_url ? (
                         <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
                       ) : (
@@ -334,10 +334,10 @@ const statItems = [
               <h3 class="text-sm font-semibold text-ah-gray-text uppercase tracking-wider">Members</h3>
               <div class="h-px bg-gray-300 flex-1"></div>
             </div>
-            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
               {remainingMembers.map((m) => (
                 <a href={`/members/${m.slug}`} class="text-center group">
-                  <div class="w-20 h-20 mx-auto mb-2 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
+                  <div class="w-28 h-28 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
                     {m.headshot_url ? (
                       <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
                     ) : (
