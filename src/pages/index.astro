@@ -90,6 +90,13 @@ const dedupedTiers = leadershipTiers.slice(1).map((tier) => {
   return { ...tier, members: uniqueMembers };
 });
 
+// Extract the last segment of BNI profession paths like "Legal & Accounting > CPA > CPA"
+function shortProfession(cat: string | null): string | null {
+  if (!cat) return null;
+  const parts = cat.split(">");
+  return parts[parts.length - 1].trim();
+}
+
 const mostWanted = [
   "Family Law Attorney", "Pest Control", "Business Attorney", "HVAC",
   "HR / Payroll", "Event Planner", "Landscaper", "Photographer",
@@ -275,7 +282,7 @@ const statItems = [
                   </div>
                   <div class="text-xs text-ah-red font-medium">{lm.title}</div>
                   {m.profession_category && (
-                    <div class="text-xs text-ah-gray-text">{m.profession_category}</div>
+                    <div class="text-xs text-ah-gray-text">{shortProfession(m.profession_category)}</div>
                   )}
                 </a>
               );
@@ -310,7 +317,7 @@ const statItems = [
                       {m.full_name}
                     </div>
                     {m.profession_category && (
-                      <div class="text-[10px] text-ah-gray-text">{m.profession_category}</div>
+                      <div class="text-[10px] text-ah-gray-text">{shortProfession(m.profession_category)}</div>
                     )}
                   </a>
                 );
@@ -343,7 +350,7 @@ const statItems = [
                     {m.full_name}
                   </div>
                   {m.profession_category && (
-                    <div class="text-[10px] text-ah-gray-text">{m.profession_category}</div>
+                    <div class="text-[10px] text-ah-gray-text">{shortProfession(m.profession_category)}</div>
                   )}
                 </a>
               ))}
