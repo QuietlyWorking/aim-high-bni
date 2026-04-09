@@ -38,6 +38,21 @@ export async function fetchOrgByDomain(
   return mapOrg(data);
 }
 
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function formatTime(t: string): string {
+  // Convert "11:30:00" or "11:30" to "11:30 AM"
+  const parts = t.split(":");
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1] || "00";
+  const ampm = hours >= 12 ? "PM" : "AM";
+  if (hours > 12) hours -= 12;
+  if (hours === 0) hours = 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
 function mapOrg(row: Record<string, unknown>): OrgConfig {
   return {
     id: row.id as string,
@@ -46,8 +61,8 @@ function mapOrg(row: Record<string, unknown>): OrgConfig {
     domain: row.domain as string,
     chapterType: row.chapter_type as string,
     region: row.region as string,
-    meetingDay: row.meeting_day as string,
-    meetingTime: row.meeting_time as string,
+    meetingDay: capitalize(row.meeting_day as string),
+    meetingTime: formatTime(row.meeting_time as string),
     meetingLocation: row.meeting_location as string,
     meetingFormat: row.meeting_format as string,
     timezone: row.timezone as string,
