@@ -1,21 +1,22 @@
 ---
 import Base from "@/layouts/Base.astro";
 import { Icon } from "astro-icon/components";
-import { fetchMembers, fetchMember } from "@/lib/supabase";
+import { fetchMembers, fetchMember, fetchChapterStats } from "@/lib/supabase";
 import RsvpForm from "@/components/react/RsvpForm";
 
 const chapter = Astro.locals.chapter;
 const sb = Astro.locals.supabase;
 const ref = Astro.url.searchParams.get("ref");
-const [members, referrer] = await Promise.all([
+const [members, referrer, stats] = await Promise.all([
   fetchMembers(sb, chapter.id),
   ref ? fetchMember(sb, chapter.id, ref) : Promise.resolve(null),
+  fetchChapterStats(sb, chapter.id),
 ]);
 
 const steps = [
   { title: "Open Networking", desc: "Casual introductions with members before the structured meeting begins." },
-  { title: "Member Presentations", desc: "Each member gives a 60-second overview of their business and ideal referral." },
-  { title: "Featured Speaker", desc: "One member delivers an in-depth 10-minute presentation about their expertise." },
+  { title: "Member Presentations", desc: "Each member gives a short overview of their business and ideal referral." },
+  { title: "Featured Speakers", desc: "One or two members deliver an in-depth 7-minute presentation about their expertise." },
   { title: "Referral Passing", desc: "Watch real referrals being exchanged — this is where the business happens." },
   { title: "Visitor Welcome", desc: "You'll have a chance to introduce yourself and your business to the group." },
 ];
@@ -72,6 +73,12 @@ const mostWantedShort = [
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-12">
       <!-- Left: Main content -->
       <div class="lg:col-span-3 space-y-16">
+
+        <!-- Referral impact callout -->
+        <section class="bg-ah-red/5 border border-ah-red/15 rounded-xl p-6 text-center">
+          <p class="text-3xl md:text-4xl font-extrabold text-ah-dark">{stats.tyfcb12Month}</p>
+          <p class="text-ah-gray-text mt-1">in closed business generated for our members in the last 12 months</p>
+        </section>
 
         <!-- What to expect -->
         <section>
