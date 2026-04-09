@@ -2,7 +2,17 @@ import { defineMiddleware } from "astro:middleware";
 import { createSupabaseClient, fetchOrgByDomain } from "@/lib/supabase";
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  const url = new URL(context.request.url);
   const host = context.request.headers.get("host") || "localhost";
+
+  // Canonical host redirect (replaces functions/_middleware.js)
+  const hostname = url.hostname;
+  if (hostname !== "localhost" && hostname !== "127.0.0.1" && !hostname.endsWith(".pages.dev")) {
+    const canonicalHost = "aimhighbni.com";
+    if (hostname !== canonicalHost) {
+      return Response.redirect(`https://${canonicalHost}${url.pathname}${url.search}`, 301);
+    }
+  }
 
   // Access env vars from Cloudflare runtime context
   const runtime = (context.locals as Record<string, unknown>).runtime as { env: Record<string, string> } | undefined;
