@@ -12,7 +12,83 @@ const [members, testimonials, stats] = await Promise.all([
   fetchChapterStats(sb, chapter.id),
 ]);
 
-const featuredMembers = members.slice(0, 6);
+// Leadership hierarchy — slugs mapped to tiers and display titles
+// Update when chapter leadership changes
+const leadershipTiers: { label: string; members: { slug: string; title: string }[] }[] = [
+  {
+    label: "Chapter Leadership",
+    members: [
+      { slug: "pi-james", title: "President" },
+      { slug: "elaine-ly", title: "Vice President" },
+      { slug: "paul-banagas", title: "Secretary / Treasurer" },
+    ],
+  },
+  {
+    label: "Visitor Hosts",
+    members: [
+      { slug: "cathie-peterson", title: "Visitor Host" },
+      { slug: "tig-heaslet", title: "Visitor Host" },
+      { slug: "christopher-borg", title: "Visitor Host" },
+      { slug: "joe-lucio", title: "Visitor Host" },
+    ],
+  },
+  {
+    label: "Membership Committee",
+    members: [
+      { slug: "cathie-peterson", title: "Membership Committee" },
+      { slug: "jason-harmon", title: "Membership Committee" },
+      { slug: "ramona-petersen", title: "Membership Committee" },
+    ],
+  },
+  {
+    label: "Growth & Mentorship",
+    members: [
+      { slug: "derek-wilson", title: "Mentor Coordinator" },
+      { slug: "jason-harmon", title: "Mentor Coordinator" },
+      { slug: "megan-lee", title: "Mentor Coordinator" },
+      { slug: "cathie-peterson", title: "Growth Coordinator" },
+      { slug: "megan-lee", title: "Growth Coordinator" },
+      { slug: "nick-messenger", title: "Growth Coordinator" },
+      { slug: "robin-edwards", title: "Growth Coordinator" },
+    ],
+  },
+];
+
+// Build ordered member list: leadership first (deduplicated), then remaining members
+const leadershipSlugs = new Set<string>();
+leadershipTiers.forEach((tier) => tier.members.forEach((m) => leadershipSlugs.add(m.slug)));
+
+// Get unique leadership members in tier order (first appearance determines position)
+const orderedLeadership: typeof members = [];
+const seenSlugs = new Set<string>();
+for (const tier of leadershipTiers) {
+  for (const lm of tier.members) {
+    if (!seenSlugs.has(lm.slug)) {
+      const member = members.find((m) => m.slug === lm.slug);
+      if (member) {
+        orderedLeadership.push(member);
+        seenSlugs.add(lm.slug);
+      }
+    }
+  }
+}
+
+// Remaining members not in any leadership tier, alphabetical
+const remainingMembers = members.filter((m) => !leadershipSlugs.has(m.slug));
+
+// For the hero background, use a mix
+const featuredMembers = [...orderedLeadership.slice(0, 3), ...remainingMembers.slice(0, 3)];
+
+// Pre-deduplicate supporting tiers for rendering (Astro templates don't support IIFEs)
+const dedupedTiers = leadershipTiers.slice(1).map((tier) => {
+  const seen = new Set<string>();
+  const uniqueMembers = tier.members.filter((lm) => {
+    if (seen.has(lm.slug)) return false;
+    seen.add(lm.slug);
+    return true;
+  });
+  return { ...tier, members: uniqueMembers };
+});
 
 const mostWanted = [
   "Family Law Attorney", "Pest Control", "Business Attorney", "HVAC",
@@ -159,42 +235,125 @@ const statItems = [
     </div>
   </section>
 
-  <!-- Meet the members preview -->
-  {featuredMembers.length > 0 && (
+  <!-- Meet our members — full roster, organized by leadership -->
+  {members.length > 0 && (
     <section class="py-16 md:py-24 bg-ah-gray">
       <div class="container mx-auto px-4">
         <div class="text-center mb-12">
           <h2 class="text-3xl md:text-4xl font-bold text-ah-dark mb-4">
-            Meet some of our members
+            Meet our members
           </h2>
           <p class="text-ah-gray-text">
             {stats.memberCount || members.length} professionals ready to help grow your business
           </p>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          {featuredMembers.map((m) => (
-            <a href={`/members/${m.slug}`} class="text-center group">
-              <div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
-                {m.headshot_url ? (
-                  <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
-                ) : (
-                  <div class="w-full h-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400">
-                    {m.first_name?.charAt(0)}
+
+        <!-- Chapter Leadership (President, VP, Sec/Treasurer) -->
+        <div class="mb-12">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="h-px bg-gray-300 flex-1"></div>
+            <h3 class="text-sm font-semibold text-ah-gray-text uppercase tracking-wider">Chapter Leadership</h3>
+            <div class="h-px bg-gray-300 flex-1"></div>
+          </div>
+          <div class="grid grid-cols-3 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+            {leadershipTiers[0].members.map((lm) => {
+              const m = members.find((mem) => mem.slug === lm.slug);
+              if (!m) return null;
+              return (
+                <a href={`/members/${m.slug}`} class="text-center group">
+                  <div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
+                    {m.headshot_url ? (
+                      <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div class="w-full h-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400">
+                        {m.first_name?.charAt(0)}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div class="text-sm font-medium text-ah-dark group-hover:text-ah-red transition-colors">
-                {m.full_name}
-              </div>
-              {m.profession_category && (
-                <div class="text-xs text-ah-gray-text">{m.profession_category}</div>
-              )}
-            </a>
-          ))}
+                  <div class="text-sm font-medium text-ah-dark group-hover:text-ah-red transition-colors">
+                    {m.full_name}
+                  </div>
+                  <div class="text-xs text-ah-red font-medium">{lm.title}</div>
+                  {m.profession_category && (
+                    <div class="text-xs text-ah-gray-text">{m.profession_category}</div>
+                  )}
+                </a>
+              );
+            })}
+          </div>
         </div>
-        <div class="text-center mt-8">
+
+        <!-- Supporting Leadership (Visitor Hosts, Membership Committee, Growth & Mentorship) -->
+        {dedupedTiers.map((tier) => (
+          <div class="mb-10">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="h-px bg-gray-200 flex-1"></div>
+              <h3 class="text-xs font-medium text-ah-gray-text uppercase tracking-wider">{tier.label}</h3>
+              <div class="h-px bg-gray-200 flex-1"></div>
+            </div>
+            <div class="flex flex-wrap justify-center gap-6">
+              {tier.members.map((lm) => {
+                const m = members.find((mem) => mem.slug === lm.slug);
+                if (!m) return null;
+                return (
+                  <a href={`/members/${m.slug}`} class="text-center group w-28">
+                    <div class="w-20 h-20 mx-auto mb-2 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
+                      {m.headshot_url ? (
+                        <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div class="w-full h-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-400">
+                          {m.first_name?.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div class="text-xs font-medium text-ah-dark group-hover:text-ah-red transition-colors">
+                      {m.full_name}
+                    </div>
+                    {m.profession_category && (
+                      <div class="text-[10px] text-ah-gray-text">{m.profession_category}</div>
+                    )}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        <!-- All Members -->
+        {remainingMembers.length > 0 && (
+          <div class="mt-10">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="h-px bg-gray-300 flex-1"></div>
+              <h3 class="text-sm font-semibold text-ah-gray-text uppercase tracking-wider">Members</h3>
+              <div class="h-px bg-gray-300 flex-1"></div>
+            </div>
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              {remainingMembers.map((m) => (
+                <a href={`/members/${m.slug}`} class="text-center group">
+                  <div class="w-20 h-20 mx-auto mb-2 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
+                    {m.headshot_url ? (
+                      <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div class="w-full h-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-400">
+                        {m.first_name?.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div class="text-xs font-medium text-ah-dark group-hover:text-ah-red transition-colors">
+                    {m.full_name}
+                  </div>
+                  {m.profession_category && (
+                    <div class="text-[10px] text-ah-gray-text">{m.profession_category}</div>
+                  )}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div class="text-center mt-10">
           <a href="/members" class="text-ah-red font-medium hover:underline inline-flex items-center gap-1">
-            View all members <Icon name="lucide:arrow-right" class="w-4 h-4" />
+            View full member directory <Icon name="lucide:arrow-right" class="w-4 h-4" />
           </a>
         </div>
       </div>
