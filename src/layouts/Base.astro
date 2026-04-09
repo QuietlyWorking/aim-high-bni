@@ -14,7 +14,7 @@ interface Props {
 const { title, description, ogImage, jsonLd } = Astro.props;
 const chapter = Astro.locals.chapter;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
-const defaultDescription = `${chapter.region}'s premier business networking chapter. ${chapter.name} members meet every ${chapter.meetingDay} at ${chapter.meetingTime}.`;
+const defaultDescription = `Southern California's premier online business networking chapter. ${chapter.name} members meet every ${chapter.meetingDay} at ${chapter.meetingTime}.`;
 const pageDescription = description || defaultDescription;
 const pageTitle = `${title} — ${chapter.name}`;
 const orgSchema = organizationSchema(chapter);

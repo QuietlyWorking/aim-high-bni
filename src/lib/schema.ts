@@ -6,7 +6,7 @@ export function organizationSchema(chapter: OrgConfig) {
     "@type": "Organization",
     name: `${chapter.name}`,
     url: `https://${chapter.domain}`,
-    description: `${chapter.region}'s premier business networking chapter`,
+    description: `Southern California's premier online business networking chapter`,
     areaServed: chapter.region,
     email: chapter.contactEmail,
     ...(chapter.logoUrl ? { logo: chapter.logoUrl } : {}),
