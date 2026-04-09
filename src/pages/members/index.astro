@@ -5,7 +5,8 @@ import { Icon } from "astro-icon/components";
 import { fetchMembers } from "@/lib/supabase";
 
 const chapter = Astro.locals.chapter;
-const members = await fetchMembers(chapter.id);
+const sb = Astro.locals.supabase;
+const members = await fetchMembers(sb, chapter.id);
 const uniqueProfessions = new Set(members.map((m) => m.profession_category).filter(Boolean)).size;
 ---
 

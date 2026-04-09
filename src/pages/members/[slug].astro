@@ -6,6 +6,7 @@ import { personSchema, breadcrumbSchema } from "@/lib/schema";
 import TestimonialForm from "@/components/react/TestimonialForm";
 
 const chapter = Astro.locals.chapter;
+const sb = Astro.locals.supabase;
 const { slug } = Astro.params;
 
 if (!slug) {
@@ -13,9 +14,9 @@ if (!slug) {
 }
 
 const [member, testimonials, recognitions] = await Promise.all([
-  fetchMember(chapter.id, slug),
-  fetchMemberTestimonials(chapter.id, slug),
-  fetchMemberRecognitions(chapter.id, slug),
+  fetchMember(sb, chapter.id, slug),
+  fetchMemberTestimonials(sb, chapter.id, slug),
+  fetchMemberRecognitions(sb, chapter.id, slug),
 ]);
 
 if (!member) {

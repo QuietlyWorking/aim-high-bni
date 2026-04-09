@@ -1,5 +1,7 @@
 /// <reference path="../.astro/types.d.ts" />
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 interface OrgConfig {
   id: string;
   name: string;
@@ -23,5 +25,9 @@ interface OrgConfig {
 declare namespace App {
   interface Locals {
     chapter: OrgConfig;
+    supabase: SupabaseClient;
+    runtime?: {
+      env: Record<string, string>;
+    };
   }
 }

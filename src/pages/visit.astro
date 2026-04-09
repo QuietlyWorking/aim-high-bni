@@ -5,10 +5,11 @@ import { fetchMembers, fetchMember } from "@/lib/supabase";
 import RsvpForm from "@/components/react/RsvpForm";
 
 const chapter = Astro.locals.chapter;
+const sb = Astro.locals.supabase;
 const ref = Astro.url.searchParams.get("ref");
 const [members, referrer] = await Promise.all([
-  fetchMembers(chapter.id),
-  ref ? fetchMember(chapter.id, ref) : Promise.resolve(null),
+  fetchMembers(sb, chapter.id),
+  ref ? fetchMember(sb, chapter.id, ref) : Promise.resolve(null),
 ]);
 
 const steps = [

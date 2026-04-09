@@ -1,22 +1,16 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { OrgConfig, Member, Testimonial, Recognition, ChapterStats } from "./types";
 
-let client: ReturnType<typeof createClient> | null = null;
-
-function getClient() {
-  if (client) return client;
-  const url = import.meta.env.SUPABASE_URL;
-  const key = import.meta.env.SUPABASE_ANON_KEY;
-  if (!url || !key) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY");
-  }
-  client = createClient(url, key);
-  return client;
+// Create a Supabase client from explicit credentials (passed from runtime context)
+export function createSupabaseClient(url: string, key: string): SupabaseClient {
+  return createClient(url, key);
 }
 
-export async function fetchOrgByDomain(domain: string): Promise<OrgConfig | null> {
-  const sb = getClient();
-
+export async function fetchOrgByDomain(
+  sb: SupabaseClient,
+  domain: string,
+  fallbackOrgId?: string,
+): Promise<OrgConfig | null> {
   // Strip port for local dev and normalize
   const cleanDomain = domain.replace(/:\d+$/, "").toLowerCase();
 
@@ -29,13 +23,12 @@ export async function fetchOrgByDomain(domain: string): Promise<OrgConfig | null
     .single();
 
   if (error || !data) {
-    // Fallback: try by org ID env var (for dev/preview deployments)
-    const fallbackId = import.meta.env.AIM_HIGH_ORG_ID;
-    if (fallbackId) {
+    // Fallback: try by org ID (for dev/preview deployments)
+    if (fallbackOrgId) {
       const { data: fallback } = await sb
         .from("organizations")
         .select("*")
-        .eq("id", fallbackId)
+        .eq("id", fallbackOrgId)
         .single();
       if (fallback) return mapOrg(fallback);
     }
@@ -67,8 +60,7 @@ function mapOrg(row: Record<string, unknown>): OrgConfig {
   };
 }
 
-export async function fetchMembers(orgId: string): Promise<Member[]> {
-  const sb = getClient();
+export async function fetchMembers(sb: SupabaseClient, orgId: string): Promise<Member[]> {
   const { data, error } = await sb
     .from("members")
     .select("*")
@@ -80,8 +72,7 @@ export async function fetchMembers(orgId: string): Promise<Member[]> {
   return data as Member[];
 }
 
-export async function fetchMember(orgId: string, slug: string): Promise<Member | null> {
-  const sb = getClient();
+export async function fetchMember(sb: SupabaseClient, orgId: string, slug: string): Promise<Member | null> {
   const { data, error } = await sb
     .from("members")
     .select("*")
@@ -93,8 +84,7 @@ export async function fetchMember(orgId: string, slug: string): Promise<Member |
   return data as Member;
 }
 
-export async function fetchTestimonials(orgId: string, featuredOnly = false): Promise<Testimonial[]> {
-  const sb = getClient();
+export async function fetchTestimonials(sb: SupabaseClient, orgId: string, featuredOnly = false): Promise<Testimonial[]> {
   let query = sb
     .from("public_chapter_testimonials")
     .select("*")
@@ -110,8 +100,7 @@ export async function fetchTestimonials(orgId: string, featuredOnly = false): Pr
   return data as Testimonial[];
 }
 
-export async function fetchMemberTestimonials(orgId: string, memberSlug: string): Promise<Testimonial[]> {
-  const sb = getClient();
+export async function fetchMemberTestimonials(sb: SupabaseClient, orgId: string, memberSlug: string): Promise<Testimonial[]> {
   const { data, error } = await sb
     .from("public_chapter_testimonials")
     .select("*")
@@ -122,8 +111,7 @@ export async function fetchMemberTestimonials(orgId: string, memberSlug: string)
   return data as Testimonial[];
 }
 
-export async function fetchMemberRecognitions(orgId: string, memberSlug: string): Promise<Recognition[]> {
-  const sb = getClient();
+export async function fetchMemberRecognitions(sb: SupabaseClient, orgId: string, memberSlug: string): Promise<Recognition[]> {
   const { data, error } = await sb
     .from("public_member_recognitions")
     .select("*")
@@ -134,8 +122,7 @@ export async function fetchMemberRecognitions(orgId: string, memberSlug: string)
   return data as Recognition[];
 }
 
-export async function fetchChapterStats(orgId: string): Promise<ChapterStats> {
-  const sb = getClient();
+export async function fetchChapterStats(sb: SupabaseClient, orgId: string): Promise<ChapterStats> {
   const { count, error } = await sb
     .from("members")
     .select("id", { count: "exact", head: true })
@@ -143,7 +130,6 @@ export async function fetchChapterStats(orgId: string): Promise<ChapterStats> {
     .eq("status", "active");
   if (error) throw error;
 
-  // TODO: Pull tyfcb, referrals, visitors from org settings or stats table
   return {
     memberCount: count || 0,
     tyfcb12Month: "$1.99M+",

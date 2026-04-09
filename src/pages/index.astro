@@ -5,10 +5,11 @@ import { Icon } from "astro-icon/components";
 import { fetchMembers, fetchTestimonials, fetchChapterStats } from "@/lib/supabase";
 
 const chapter = Astro.locals.chapter;
+const sb = Astro.locals.supabase;
 const [members, testimonials, stats] = await Promise.all([
-  fetchMembers(chapter.id),
-  fetchTestimonials(chapter.id, true),
-  fetchChapterStats(chapter.id),
+  fetchMembers(sb, chapter.id),
+  fetchTestimonials(sb, chapter.id, true),
+  fetchChapterStats(sb, chapter.id),
 ]);
 
 const featuredMembers = members.slice(0, 6);
