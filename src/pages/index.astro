@@ -117,13 +117,14 @@ const statItems = [
 
   <!-- Hero -->
   <section class="relative bg-ah-dark text-white py-20 md:py-28 overflow-hidden">
-    {featuredMembers.length > 0 && (
+    {members.length > 0 && (
       <div class="absolute inset-0 opacity-15">
-        <div class="flex h-full">
-          {featuredMembers.map((m) => (
-            <div class="flex-1 h-full">
+        <div class="hero-marquee flex h-full">
+          {/* Double the members array for seamless infinite loop */}
+          {[...members, ...members].map((m, i) => (
+            <div class="flex-shrink-0 h-full" style="width: 20vw; min-width: 200px;">
               {m.headshot_url && (
-                <img src={m.headshot_url} alt="" class="w-full h-full object-cover" />
+                <img src={m.headshot_url} alt="" class="w-full h-full object-cover" loading={i < 6 ? "eager" : "lazy"} />
               )}
             </div>
           ))}

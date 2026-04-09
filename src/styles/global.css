@@ -11,3 +11,25 @@
     font-family: "Inter", sans-serif;
   }
 }
+
+/* Hero member headshot marquee — slow infinite horizontal scroll */
+.hero-marquee {
+  animation: hero-scroll 60s linear infinite;
+}
+
+@keyframes hero-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Pause on hover for accessibility */
+.hero-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .hero-marquee {
+    animation: none;
+  }
+}
