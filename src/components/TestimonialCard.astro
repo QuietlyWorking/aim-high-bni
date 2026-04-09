@@ -1,0 +1,16 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+  quote: string;
+}
+
+const { quote } = Astro.props;
+---
+
+<div class="bg-white rounded-xl p-6 shadow-sm">
+  <Icon name="lucide:quote" class="w-8 h-8 text-ah-red/20 mb-3" />
+  <p class="text-ah-dark text-sm leading-relaxed">
+    &ldquo;{quote}&rdquo;
+  </p>
+</div>

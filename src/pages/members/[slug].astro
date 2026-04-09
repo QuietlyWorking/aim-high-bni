@@ -1,0 +1,171 @@
+---
+import Base from "@/layouts/Base.astro";
+import { Icon } from "astro-icon/components";
+import { fetchMember, fetchMemberTestimonials, fetchMemberRecognitions } from "@/lib/supabase";
+import { personSchema, breadcrumbSchema } from "@/lib/schema";
+import TestimonialForm from "@/components/react/TestimonialForm";
+
+const chapter = Astro.locals.chapter;
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect("/members");
+}
+
+const [member, testimonials, recognitions] = await Promise.all([
+  fetchMember(chapter.id, slug),
+  fetchMemberTestimonials(chapter.id, slug),
+  fetchMemberRecognitions(chapter.id, slug),
+]);
+
+if (!member) {
+  return Astro.redirect("/404");
+}
+
+const allQuotes = [
+  ...testimonials.map((t) => ({ text: t.quote, source: "testimonial" as const, from: null as string | null })),
+  ...recognitions.map((r) => ({ text: r.message, source: "recognition" as const, from: r.from_member_name })),
+];
+
+const memberSchema = personSchema(member, chapter.domain);
+const breadcrumb = breadcrumbSchema([
+  { name: "Home", url: `https://${chapter.domain}` },
+  { name: "Members", url: `https://${chapter.domain}/members` },
+  { name: member.full_name, url: `https://${chapter.domain}/members/${member.slug}` },
+]);
+---
+
+<Base
+  title={member.full_name}
+  description={[member.profession_category, member.business_name, member.tagline].filter(Boolean).join(" — ")}
+  ogImage={member.headshot_url || undefined}
+  jsonLd={memberSchema}
+>
+
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumb)} />
+
+  <div class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <a href="/members" class="text-ah-red text-sm hover:underline mb-8 inline-flex items-center gap-1">
+        <Icon name="lucide:arrow-left" class="w-4 h-4" /> Back to Members
+      </a>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-ah-red/5 p-8 flex flex-col md:flex-row gap-8">
+          <div class="w-48 h-48 rounded-lg overflow-hidden flex-shrink-0 mx-auto md:mx-0 shadow-md">
+            {member.headshot_url ? (
+              <img src={member.headshot_url} alt={member.full_name} class="w-full h-full object-cover" />
+            ) : (
+              <div class="w-full h-full bg-gray-200 flex items-center justify-center text-5xl font-bold text-gray-400">
+                {member.first_name?.charAt(0)}
+              </div>
+            )}
+          </div>
+          <div class="text-center md:text-left">
+            <p class="text-sm text-ah-red uppercase tracking-wider font-medium mb-1">Meet</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-ah-dark mb-2">{member.full_name}</h1>
+            {member.profession_category && (
+              <span class="inline-block bg-ah-red text-white text-sm px-4 py-1 rounded-full font-medium mb-3">
+                {member.profession_category}
+              </span>
+            )}
+            {member.business_name && <p class="text-ah-dark font-medium">{member.business_name}</p>}
+            {member.tagline && <p class="text-ah-gray-text mt-2">{member.tagline}</p>}
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-8 space-y-8">
+          {member.bio && (
+            <div>
+              <h2 class="font-semibold text-ah-dark mb-2">About</h2>
+              <p class="text-ah-gray-text leading-relaxed">{member.bio}</p>
+            </div>
+          )}
+
+          {member.ideal_referral && (
+            <div>
+              <h2 class="font-semibold text-ah-dark mb-2">Ideal Referral</h2>
+              <p class="text-ah-gray-text leading-relaxed">{member.ideal_referral}</p>
+            </div>
+          )}
+
+          <!-- Contact -->
+          <div>
+            <h2 class="font-semibold text-ah-dark mb-3">Connect</h2>
+            <div class="flex flex-wrap gap-3">
+              {member.public_email && member.email && (
+                <a href={`mailto:${member.email}`} class="inline-flex items-center gap-2 text-sm bg-ah-gray px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                  <Icon name="lucide:mail" class="w-4 h-4 text-ah-red" /> {member.email}
+                </a>
+              )}
+              {member.public_phone && member.phone && (
+                <a href={`tel:${member.phone}`} class="inline-flex items-center gap-2 text-sm bg-ah-gray px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                  <Icon name="lucide:phone" class="w-4 h-4 text-ah-red" /> {member.phone}
+                </a>
+              )}
+              {member.linkedin_url && (
+                <a href={member.linkedin_url} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm bg-ah-gray px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                  <Icon name="lucide:linkedin" class="w-4 h-4 text-ah-red" /> LinkedIn
+                </a>
+              )}
+              {member.website && (
+                <a href={member.website} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm bg-ah-gray px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                  <Icon name="lucide:globe" class="w-4 h-4 text-ah-red" /> Website
+                </a>
+              )}
+              {member.instagram_handle && (
+                <a href={`https://instagram.com/${member.instagram_handle}`} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm bg-ah-gray px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                  <Icon name="lucide:instagram" class="w-4 h-4 text-ah-red" /> @{member.instagram_handle}
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonials & Recognitions -->
+      {allQuotes.length > 0 && (
+        <div class="mt-8">
+          <h2 class="text-2xl font-bold text-ah-dark mb-6">
+            What people say about {member.first_name}
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {allQuotes.map((q) => (
+              <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                <Icon name="lucide:quote" class="w-6 h-6 text-ah-red/20 mb-2" />
+                <p class="text-ah-dark text-sm leading-relaxed">&ldquo;{q.text}&rdquo;</p>
+                {q.source === "recognition" && q.from && (
+                  <p class="text-xs text-ah-gray-text mt-2">&mdash; {q.from}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <!-- Say something nice -->
+      <TestimonialForm
+        client:visible
+        memberSlug={member.slug}
+        memberName={member.first_name}
+        orgId={chapter.id}
+      />
+
+      <!-- CTA -->
+      <div class="text-center mt-12 py-10 bg-white rounded-xl shadow-sm border border-gray-100">
+        <h2 class="text-xl font-bold text-ah-dark mb-3">
+          Want to meet {member.first_name} and the rest of the chapter?
+        </h2>
+        <a
+          href={`/visit?ref=${member.slug}`}
+          class="inline-flex items-center gap-2 bg-ah-red text-white px-6 py-3 rounded-lg font-semibold hover:bg-ah-red-dark transition-colors"
+        >
+          Register to Visit <Icon name="lucide:arrow-right" class="w-4 h-4" />
+        </a>
+      </div>
+    </div>
+  </div>
+
+</Base>

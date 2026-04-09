@@ -1,0 +1,35 @@
+---
+import type { Member } from "@/lib/types";
+
+interface Props {
+  member: Member;
+}
+
+const { member } = Astro.props;
+---
+
+<a
+  href={`/members/${member.slug}`}
+  class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 text-center hover:shadow-md hover:border-ah-red/20 transition-all group"
+>
+  <div class="w-28 h-28 rounded-full mx-auto mb-4 overflow-hidden border-3 border-transparent group-hover:border-ah-red transition-colors">
+    {member.headshot_url ? (
+      <img src={member.headshot_url} alt={member.full_name} class="w-full h-full object-cover" loading="lazy" />
+    ) : (
+      <div class="w-full h-full bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-400">
+        {member.first_name?.charAt(0)}
+      </div>
+    )}
+  </div>
+  <h3 class="font-semibold text-ah-dark group-hover:text-ah-red transition-colors">
+    {member.full_name}
+  </h3>
+  {member.business_name && (
+    <p class="text-sm text-ah-gray-text mt-1">{member.business_name}</p>
+  )}
+  {member.profession_category && (
+    <span class="inline-block mt-2 text-xs bg-ah-red/10 text-ah-red px-3 py-1 rounded-full font-medium">
+      {member.profession_category}
+    </span>
+  )}
+</a>

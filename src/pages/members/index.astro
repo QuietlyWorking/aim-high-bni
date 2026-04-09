@@ -1,0 +1,60 @@
+---
+import Base from "@/layouts/Base.astro";
+import MemberCard from "@/components/MemberCard.astro";
+import { Icon } from "astro-icon/components";
+import { fetchMembers } from "@/lib/supabase";
+
+const chapter = Astro.locals.chapter;
+const members = await fetchMembers(chapter.id);
+const uniqueProfessions = new Set(members.map((m) => m.profession_category).filter(Boolean)).size;
+---
+
+<Base title="Members" description={`Meet the ${members.length} professionals of ${chapter.name} across ${uniqueProfessions} industries.`}>
+
+  <section class="bg-ah-red text-white py-16 md:py-20">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-sm uppercase tracking-wider mb-2 text-white/70">
+        Meet the Infamous
+      </p>
+      <h1 class="text-4xl md:text-5xl font-extrabold">
+        {chapter.name} Members
+      </h1>
+      <p class="text-white/70 mt-4">
+        {members.length} professionals across {uniqueProfessions} industries
+      </p>
+    </div>
+  </section>
+
+  <section class="py-16">
+    <div class="container mx-auto px-4">
+      {members.length > 0 ? (
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {members.map((m) => (
+            <MemberCard member={m} />
+          ))}
+        </div>
+      ) : (
+        <p class="text-center text-ah-gray-text">
+          No members to display.
+        </p>
+      )}
+
+      <!-- CTA -->
+      <div class="text-center mt-16 py-12 bg-ah-gray rounded-xl">
+        <h2 class="text-2xl font-bold text-ah-dark mb-3">
+          Want to meet these professionals in person?
+        </h2>
+        <p class="text-ah-gray-text mb-6">
+          Visit a meeting and see how we work together.
+        </p>
+        <a
+          href="/visit"
+          class="inline-flex items-center gap-2 bg-ah-red text-white px-8 py-3 rounded-lg font-semibold hover:bg-ah-red-dark transition-colors"
+        >
+          Register to Visit <Icon name="lucide:arrow-right" class="w-5 h-5" />
+        </a>
+      </div>
+    </div>
+  </section>
+
+</Base>

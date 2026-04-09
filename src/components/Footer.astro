@@ -1,0 +1,36 @@
+---
+const chapter = Astro.locals.chapter;
+const year = new Date().getFullYear();
+const nameParts = chapter.name.replace("BNI", "").trim();
+---
+
+<footer class="bg-ah-dark text-white py-12">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div>
+        <h3 class="text-lg font-bold mb-4">
+          {nameParts} <span class="text-ah-red">BNI</span>
+        </h3>
+        <p class="text-gray-400 text-sm">
+          {chapter.region}'s premier networking chapter. Every {chapter.meetingDay} at {chapter.meetingTime}, {chapter.meetingLocation}. Building relationships,
+          exchanging referrals, and growing together.
+        </p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-4">Quick Links</h4>
+        <div class="flex flex-col gap-2">
+          <a href="/" class="text-gray-400 text-sm hover:text-white transition-colors">Home</a>
+          <a href="/members" class="text-gray-400 text-sm hover:text-white transition-colors">Members</a>
+          <a href="/visit" class="text-gray-400 text-sm hover:text-white transition-colors">Visit Us</a>
+        </div>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-4">Contact</h4>
+        <p class="text-gray-400 text-sm">{chapter.contactEmail}</p>
+      </div>
+    </div>
+    <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-500 text-sm">
+      &copy; {year} {chapter.name}. All rights reserved.
+    </div>
+  </div>
+</footer>

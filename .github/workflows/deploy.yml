@@ -2,6 +2,7 @@ name: Deploy to Cloudflare Pages
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,9 +18,9 @@ jobs:
       - run: npm install
       - run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_AIM_HIGH_ORG_ID: ${{ secrets.VITE_AIM_HIGH_ORG_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          AIM_HIGH_ORG_ID: ${{ secrets.AIM_HIGH_ORG_ID }}
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -1,0 +1,222 @@
+---
+import Base from "@/layouts/Base.astro";
+import TestimonialCard from "@/components/TestimonialCard.astro";
+import { Icon } from "astro-icon/components";
+import { fetchMembers, fetchTestimonials, fetchChapterStats } from "@/lib/supabase";
+
+const chapter = Astro.locals.chapter;
+const [members, testimonials, stats] = await Promise.all([
+  fetchMembers(chapter.id),
+  fetchTestimonials(chapter.id, true),
+  fetchChapterStats(chapter.id),
+]);
+
+const featuredMembers = members.slice(0, 6);
+
+const mostWanted = [
+  "Family Law Attorney", "Pest Control", "Business Attorney", "HVAC",
+  "HR / Payroll", "Event Planner", "Landscaper", "Photographer",
+  "Property Management", "General Contractor", "Personal Injury Attorney",
+  "Fitness Trainer", "Title", "Notary", "Commercial Insurance",
+  "Massage Therapist", "Chiropractor",
+];
+
+const statItems = [
+  { value: stats.tyfcb12Month, label: "Closed Business (12 Months)" },
+  { value: stats.referralsGiven, label: "Referrals Given (Q1)" },
+  { value: String(stats.memberCount || members.length), label: "Active Members" },
+  { value: stats.visitorsPerYear, label: "Visitors Per Year" },
+];
+---
+
+<Base title={chapter.name} description={`${chapter.region}'s premier business networking chapter. ${stats.tyfcb12Month} in closed business generated for our members.`}>
+
+  <!-- Hero -->
+  <section class="relative bg-ah-dark text-white py-20 md:py-28 overflow-hidden">
+    {featuredMembers.length > 0 && (
+      <div class="absolute inset-0 opacity-15">
+        <div class="flex h-full">
+          {featuredMembers.map((m) => (
+            <div class="flex-1 h-full">
+              {m.headshot_url && (
+                <img src={m.headshot_url} alt="" class="w-full h-full object-cover" />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+    <div class="container mx-auto px-4 text-center relative z-10">
+      <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+        {chapter.name.replace("BNI", "").trim()} <span class="text-ah-red">BNI</span>
+      </h1>
+      <p class="text-lg md:text-xl text-gray-300 mb-4 max-w-2xl mx-auto">
+        {chapter.region}'s premier business networking chapter
+      </p>
+      <p class="text-2xl md:text-3xl font-bold text-white mb-8 max-w-3xl mx-auto">
+        {stats.tyfcb12Month} in closed business generated for our members in the last 12 months
+      </p>
+      <a
+        href="/visit"
+        class="inline-flex items-center gap-2 bg-ah-red text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-ah-red-dark transition-colors shadow-lg shadow-ah-red/25"
+      >
+        Visit a Meeting <Icon name="lucide:arrow-right" class="w-5 h-5" />
+      </a>
+      <p class="text-sm text-gray-400 mt-4">
+        Every {chapter.meetingDay}, {chapter.meetingTime} &nbsp;|&nbsp; {chapter.meetingLocation}
+      </p>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-ah-dark mb-4">
+          Meet with us every week
+        </h2>
+        <p class="text-ah-gray-text max-w-2xl mx-auto">
+          {chapter.name.split(" ")[0]} {chapter.name.split(" ")[1]} is a structured networking group where members build real relationships,
+          pass quality referrals, and help each other grow. Here's how it works.
+        </p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[
+          { icon: "lucide:handshake", title: "Connect", desc: "Build genuine relationships with local business professionals through weekly meetings and one-to-one conversations." },
+          { icon: "lucide:users", title: "Refer", desc: "Exchange quality referrals with trusted partners who understand your ideal customer — because they've gotten to know you." },
+          { icon: "lucide:trending-up", title: "Grow", desc: `Our members generated nearly ${stats.tyfcb12Month.replace("+", "")} in closed business last year through the power of structured, relationship-based networking.` },
+        ].map((item) => (
+          <div class="text-center p-6 rounded-xl hover:bg-ah-gray transition-colors">
+            <div class="w-16 h-16 bg-ah-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Icon name={item.icon} class="w-8 h-8 text-ah-red" />
+            </div>
+            <h3 class="text-xl font-semibold text-ah-dark mb-2">{item.title}</h3>
+            <p class="text-ah-gray-text text-sm leading-relaxed">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="bg-ah-red text-white py-16">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        {statItems.map((stat) => (
+          <div>
+            <div class="text-3xl md:text-4xl font-extrabold">{stat.value}</div>
+            <div class="text-sm text-white/70 mt-1">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  {testimonials.length > 0 && (
+    <section class="py-16 md:py-24 bg-ah-gray">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl md:text-4xl font-bold text-ah-dark">
+            What people are saying
+          </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {testimonials.slice(0, 6).map((t) => (
+            <TestimonialCard quote={t.quote} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Most Wanted Professions -->
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-3xl md:text-4xl font-bold text-ah-dark mb-4">
+          Is your profession on our Most Wanted list?
+        </h2>
+        <p class="text-ah-gray-text mb-8">
+          We're actively looking for professionals in these categories to join our chapter.
+          If you see your industry below, we have a seat reserved for you.
+        </p>
+        <div class="flex flex-wrap justify-center gap-3 mb-10">
+          {mostWanted.map((profession) => (
+            <span class="bg-ah-gray text-ah-dark text-sm font-medium px-4 py-2 rounded-full border border-gray-200">
+              {profession}
+            </span>
+          ))}
+        </div>
+        <a
+          href="/visit"
+          class="inline-flex items-center gap-2 bg-ah-red text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-ah-red-dark transition-colors"
+        >
+          Register to Visit <Icon name="lucide:arrow-right" class="w-5 h-5" />
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Meet the members preview -->
+  {featuredMembers.length > 0 && (
+    <section class="py-16 md:py-24 bg-ah-gray">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl md:text-4xl font-bold text-ah-dark mb-4">
+            Meet some of our members
+          </h2>
+          <p class="text-ah-gray-text">
+            {stats.memberCount || members.length} professionals ready to help grow your business
+          </p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          {featuredMembers.map((m) => (
+            <a href={`/members/${m.slug}`} class="text-center group">
+              <div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
+                {m.headshot_url ? (
+                  <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div class="w-full h-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400">
+                    {m.first_name?.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div class="text-sm font-medium text-ah-dark group-hover:text-ah-red transition-colors">
+                {m.full_name}
+              </div>
+              {m.profession_category && (
+                <div class="text-xs text-ah-gray-text">{m.profession_category}</div>
+              )}
+            </a>
+          ))}
+        </div>
+        <div class="text-center mt-8">
+          <a href="/members" class="text-ah-red font-medium hover:underline inline-flex items-center gap-1">
+            View all members <Icon name="lucide:arrow-right" class="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Final CTA -->
+  <section class="py-16 md:py-24 text-center">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl md:text-4xl font-bold text-ah-dark mb-4">
+        Ready to grow your business?
+      </h2>
+      <p class="text-ah-gray-text max-w-xl mx-auto mb-8">
+        Visit a meeting and see what happens when {stats.memberCount || members.length} professionals
+        are working to send you their best referrals.
+      </p>
+      <a
+        href="/visit"
+        class="inline-flex items-center gap-2 bg-ah-red text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-ah-red-dark transition-colors shadow-lg shadow-ah-red/25"
+      >
+        Register to Visit <Icon name="lucide:arrow-right" class="w-5 h-5" />
+      </a>
+    </div>
+  </section>
+
+</Base>

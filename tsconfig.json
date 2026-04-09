@@ -1,17 +1,10 @@
 {
+  "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     },
-    "skipLibCheck": true,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "strictNullChecks": false
-  },
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+    "jsx": "react-jsx"
+  }
 }

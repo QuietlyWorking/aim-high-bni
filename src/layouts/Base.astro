@@ -1,0 +1,62 @@
+---
+import "@/styles/global.css";
+import Navbar from "@/components/Navbar.astro";
+import Footer from "@/components/Footer.astro";
+import { organizationSchema } from "@/lib/schema";
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, description, ogImage, jsonLd } = Astro.props;
+const chapter = Astro.locals.chapter;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).toString();
+const defaultDescription = `${chapter.region}'s premier business networking chapter. ${chapter.name} members meet every ${chapter.meetingDay} at ${chapter.meetingTime}.`;
+const pageDescription = description || defaultDescription;
+const pageTitle = `${title} — ${chapter.name}`;
+const orgSchema = organizationSchema(chapter);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content={chapter.name} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <Navbar />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
