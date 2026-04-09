@@ -117,8 +117,8 @@ const breadcrumb = breadcrumbSchema([
                 </a>
               )}
               {member.instagram_handle && (
-                <a href={`https://instagram.com/${member.instagram_handle}`} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm bg-ah-gray px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
-                  <Icon name="lucide:instagram" class="w-4 h-4 text-ah-red" /> @{member.instagram_handle}
+                <a href={`https://instagram.com/${member.instagram_handle.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm bg-ah-gray px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                  <Icon name="lucide:instagram" class="w-4 h-4 text-ah-red" /> @{member.instagram_handle.replace(/^@/, "")}
                 </a>
               )}
             </div>
