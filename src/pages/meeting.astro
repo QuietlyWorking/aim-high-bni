@@ -1,0 +1,195 @@
+---
+import Base from "@/layouts/Base.astro";
+import { Icon } from "astro-icon/components";
+
+const chapter = Astro.locals.chapter;
+
+const agendaSteps = [
+  {
+    time: "5 min",
+    title: "Open Networking",
+    description: "Arrive early, grab your coffee, and introduce yourself. No pressure — just friendly conversation.",
+    icon: "lucide:coffee",
+  },
+  {
+    time: "10 min",
+    title: "Welcome & Introductions",
+    description: "The President opens the meeting, visitors are introduced, and any chapter news is shared.",
+    icon: "lucide:hand-metal",
+  },
+  {
+    time: "30 sec each",
+    title: "Member Commercials",
+    description: "Each member gives a 30-second elevator pitch about their business. This is where you learn what everyone does and who they're looking for.",
+    icon: "lucide:mic",
+  },
+  {
+    time: "10 min",
+    title: "Featured Speaker",
+    description: "One member gives a deeper presentation about their business — what makes them different, case studies, and how to refer them effectively.",
+    icon: "lucide:presentation",
+  },
+  {
+    time: "15 min",
+    title: "Referrals & Testimonials",
+    description: "Members pass referrals to each other and share \"You Got Caught\" moments — recognizing fellow members who went above and beyond.",
+    icon: "lucide:gift",
+  },
+  {
+    time: "5 min",
+    title: "Closing",
+    description: "Wrap-up, upcoming events, and next steps for visitors interested in joining.",
+    icon: "lucide:check-circle",
+  },
+];
+
+const faqs = [
+  {
+    q: "What should I wear?",
+    a: `We're a 100% virtual chapter, so business casual from the waist up works perfectly. Most of us are in home offices with coffee in hand.`,
+  },
+  {
+    q: "Do I need to prepare anything?",
+    a: "Not a thing. Just show up, be yourself, and be ready to tell us a little about what you do when introduced.",
+  },
+  {
+    q: "Is there a cost to visit?",
+    a: "Your first visit is completely free. You can visit up to three times before deciding if you'd like to apply for membership.",
+  },
+  {
+    q: "How do I join the virtual meeting?",
+    a: "After you register, our Visitor Host will send you the Zoom link and any details you need. You'll also get a friendly reminder the day before.",
+  },
+  {
+    q: "What if I'm not sure BNI is for me?",
+    a: "That's exactly why we invite you to visit first. There's zero pressure. Come see if the group feels right — the best networking happens when it's genuine.",
+  },
+  {
+    q: "How long is the meeting?",
+    a: "About 90 minutes. We know your time is valuable, so we keep things moving.",
+  },
+];
+---
+
+<Base
+  title="What to Expect"
+  description={`Visiting ${chapter.name} for the first time? Here's exactly what happens at our ${chapter.meetingDay} meeting — no surprises, no pressure.`}
+>
+
+  <!-- Hero -->
+  <section class="bg-ah-dark text-white py-16 md:py-20">
+    <div class="container mx-auto px-4 text-center max-w-3xl">
+      <p class="text-ah-red text-sm uppercase tracking-wider font-medium mb-3">Your First Visit</p>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-6">
+        Here's what happens at our meeting
+      </h1>
+      <p class="text-lg text-gray-300 mb-2">
+        Every {chapter.meetingDay} at {chapter.meetingTime} &nbsp;|&nbsp; {chapter.meetingLocation}
+      </p>
+      <p class="text-gray-400">
+        ~90 minutes. No pressure. Just good people building real business relationships.
+      </p>
+    </div>
+  </section>
+
+  <!-- Agenda timeline -->
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-3xl">
+      <h2 class="text-2xl md:text-3xl font-bold text-ah-dark text-center mb-12">
+        The meeting flow
+      </h2>
+
+      <div class="space-y-0">
+        {agendaSteps.map((step, i) => (
+          <div class="flex gap-4 md:gap-6">
+            {/* Timeline line + dot */}
+            <div class="flex flex-col items-center">
+              <div class="w-10 h-10 rounded-full bg-ah-red/10 flex items-center justify-center flex-shrink-0">
+                <Icon name={step.icon} class="w-5 h-5 text-ah-red" />
+              </div>
+              {i < agendaSteps.length - 1 && (
+                <div class="w-px flex-1 bg-gray-200 my-1"></div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div class="pb-8">
+              <div class="flex items-center gap-3 mb-1">
+                <h3 class="text-lg font-semibold text-ah-dark">{step.title}</h3>
+                <span class="text-xs text-ah-gray-text bg-ah-gray px-2 py-0.5 rounded-full">{step.time}</span>
+              </div>
+              <p class="text-sm text-ah-gray-text leading-relaxed">{step.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- What visitors say -->
+  <section class="py-16 md:py-20 bg-ah-gray">
+    <div class="container mx-auto px-4 max-w-3xl text-center">
+      <h2 class="text-2xl md:text-3xl font-bold text-ah-dark mb-4">
+        You'll feel welcome from minute one
+      </h2>
+      <p class="text-ah-gray-text max-w-xl mx-auto mb-10">
+        We know visiting a networking group for the first time can feel awkward.
+        That's why every visitor gets a personal host — someone whose only job that day is to make sure you feel at home.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+        {[
+          { icon: "lucide:user-check", title: "Personal host", text: "You'll be introduced to a Visitor Host before the meeting who will walk you through everything." },
+          { icon: "lucide:message-circle", title: "No cold seats", text: "You won't sit in a corner wondering what's happening. You'll be introduced to the group and made part of the conversation." },
+          { icon: "lucide:heart", title: "Zero pressure", text: "Visit up to three times. Nobody will corner you about joining. We want you here because you want to be here." },
+        ].map((item) => (
+          <div class="bg-white rounded-xl p-5 shadow-sm">
+            <Icon name={item.icon} class="w-6 h-6 text-ah-red mb-3" />
+            <h3 class="font-semibold text-ah-dark mb-1 text-sm">{item.title}</h3>
+            <p class="text-xs text-ah-gray-text leading-relaxed">{item.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQs -->
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-2xl">
+      <h2 class="text-2xl md:text-3xl font-bold text-ah-dark text-center mb-10">
+        Questions visitors ask
+      </h2>
+      <div class="space-y-4">
+        {faqs.map((faq) => (
+          <details class="group bg-ah-gray rounded-xl">
+            <summary class="px-5 py-4 cursor-pointer flex items-center justify-between text-sm font-medium text-ah-dark">
+              {faq.q}
+              <Icon name="lucide:chevron-down" class="w-4 h-4 text-ah-gray-text transition-transform group-open:rotate-180" />
+            </summary>
+            <div class="px-5 pb-4 text-sm text-ah-gray-text leading-relaxed">
+              {faq.a}
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-16 md:py-24 text-center bg-ah-dark text-white">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">
+        Ready to visit?
+      </h2>
+      <p class="text-gray-400 max-w-md mx-auto mb-8">
+        Register below and our Visitor Host will reach out with everything you need.
+      </p>
+      <a
+        href="/visit"
+        class="inline-flex items-center gap-2 bg-ah-red text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-ah-red-dark transition-colors shadow-lg shadow-ah-red/25"
+      >
+        Register to Visit <Icon name="lucide:arrow-right" class="w-5 h-5" />
+      </a>
+    </div>
+  </section>
+
+</Base>

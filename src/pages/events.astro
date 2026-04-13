@@ -1,0 +1,160 @@
+---
+import Base from "@/layouts/Base.astro";
+import { Icon } from "astro-icon/components";
+import { fetchPublicEvents } from "@/lib/supabase";
+
+const chapter = Astro.locals.chapter;
+const sb = Astro.locals.supabase;
+const events = await fetchPublicEvents(sb, chapter.id);
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+
+function formatTime(t: string): string {
+  const parts = t.split(":");
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1] || "00";
+  const ampm = hours >= 12 ? "PM" : "AM";
+  if (hours > 12) hours -= 12;
+  if (hours === 0) hours = 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+const typeIcons: Record<string, string> = {
+  social: "lucide:coffee",
+  workshop: "lucide:graduation-cap",
+  networking: "lucide:users",
+  fundraiser: "lucide:heart",
+  meeting: "lucide:calendar",
+};
+
+const formatLabels: Record<string, string> = {
+  in_person: "In Person",
+  virtual: "Virtual",
+  hybrid: "Hybrid",
+};
+---
+
+<Base
+  title="Events"
+  description={`Upcoming events from ${chapter.name}. Socials, workshops, and networking events open to the community.`}
+>
+
+  <!-- Hero -->
+  <section class="bg-ah-dark text-white py-16 md:py-20">
+    <div class="container mx-auto px-4 text-center max-w-3xl">
+      <p class="text-ah-red text-sm uppercase tracking-wider font-medium mb-3">Get Involved</p>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+        Upcoming Events
+      </h1>
+      <p class="text-gray-400">
+        Beyond our weekly meetings, we host socials, workshops, and community events.
+        Everyone's welcome.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-3xl">
+
+      {events.length > 0 ? (
+        <div class="space-y-6">
+          {events.map((event) => {
+            const iconName = typeIcons[event.event_type] || "lucide:calendar";
+            return (
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div class="p-6">
+                  <div class="flex items-start gap-4">
+                    {/* Date badge */}
+                    <div class="flex-shrink-0 w-14 h-14 bg-ah-red/10 rounded-lg flex flex-col items-center justify-center">
+                      <span class="text-xs text-ah-red font-medium uppercase">
+                        {new Date(event.event_date + "T12:00:00").toLocaleDateString("en-US", { month: "short" })}
+                      </span>
+                      <span class="text-xl font-bold text-ah-red leading-none">
+                        {new Date(event.event_date + "T12:00:00").getDate()}
+                      </span>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1 flex-wrap">
+                        <h2 class="text-lg font-bold text-ah-dark">{event.name}</h2>
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-ah-gray-text bg-ah-gray px-2 py-0.5 rounded-full">
+                          <Icon name={iconName} class="w-3 h-3" />
+                          {event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1)}
+                        </span>
+                        <span class="text-xs font-medium text-ah-gray-text bg-ah-gray px-2 py-0.5 rounded-full">
+                          {formatLabels[event.format] || event.format}
+                        </span>
+                      </div>
+
+                      <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ah-gray-text mb-2">
+                        <span class="flex items-center gap-1">
+                          <Icon name="lucide:calendar" class="w-3.5 h-3.5" />
+                          {formatDate(event.event_date)}
+                        </span>
+                        <span class="flex items-center gap-1">
+                          <Icon name="lucide:clock" class="w-3.5 h-3.5" />
+                          {formatTime(event.start_time)}{event.end_time ? ` – ${formatTime(event.end_time)}` : ""}
+                        </span>
+                        {event.location_name && (
+                          <span class="flex items-center gap-1">
+                            <Icon name="lucide:map-pin" class="w-3.5 h-3.5" />
+                            {event.location_name}
+                          </span>
+                        )}
+                      </div>
+
+                      {event.description && (
+                        <p class="text-sm text-ah-gray-text leading-relaxed">{event.description}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div class="text-center py-16">
+          <Icon name="lucide:calendar-x" class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h2 class="text-xl font-bold text-ah-dark mb-2">No upcoming events</h2>
+          <p class="text-ah-gray-text max-w-md mx-auto mb-8">
+            We don't have any public events scheduled right now, but we meet every {chapter.meetingDay} at {chapter.meetingTime}.
+          </p>
+          <a
+            href="/visit"
+            class="inline-flex items-center gap-2 bg-ah-red text-white px-6 py-3 rounded-lg font-semibold hover:bg-ah-red-dark transition-colors"
+          >
+            Visit a Meeting <Icon name="lucide:arrow-right" class="w-4 h-4" />
+          </a>
+        </div>
+      )}
+
+    </div>
+  </section>
+
+  <!-- Weekly meeting CTA -->
+  <section class="py-12 bg-ah-gray">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-ah-gray-text text-sm mb-3">Looking for our weekly meeting?</p>
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <a
+          href="/meeting"
+          class="inline-flex items-center gap-2 text-ah-red font-medium hover:underline"
+        >
+          What to expect <Icon name="lucide:arrow-right" class="w-4 h-4" />
+        </a>
+        <span class="text-gray-300">|</span>
+        <a
+          href="/visit"
+          class="inline-flex items-center gap-2 bg-ah-red text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-ah-red-dark transition-colors"
+        >
+          Register to Visit
+        </a>
+      </div>
+    </div>
+  </section>
+
+</Base>

@@ -2,14 +2,15 @@
 import Base from "@/layouts/Base.astro";
 import TestimonialCard from "@/components/TestimonialCard.astro";
 import { Icon } from "astro-icon/components";
-import { fetchMembers, fetchTestimonials, fetchChapterStats } from "@/lib/supabase";
+import { fetchMembers, fetchTestimonials, fetchChapterStats, fetchUpcomingSpeakers } from "@/lib/supabase";
 
 const chapter = Astro.locals.chapter;
 const sb = Astro.locals.supabase;
-const [members, testimonials, stats] = await Promise.all([
+const [members, testimonials, stats, upcomingSpeakers] = await Promise.all([
   fetchMembers(sb, chapter.id),
   fetchTestimonials(sb, chapter.id, true),
   fetchChapterStats(sb, chapter.id),
+  fetchUpcomingSpeakers(sb, chapter.id),
 ]);
 
 // Leadership hierarchy — slugs mapped to tiers and display titles
@@ -210,6 +211,48 @@ const statItems = [
           {testimonials.slice(0, 6).map((t) => (
             <TestimonialCard quote={t.quote} />
           ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Upcoming Speakers -->
+  {upcomingSpeakers.length > 0 && (
+    <section class="py-16 md:py-24">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-10">
+          <h2 class="text-3xl md:text-4xl font-bold text-ah-dark mb-3">
+            Coming up next
+          </h2>
+          <p class="text-ah-gray-text">
+            Featured speakers at our upcoming meetings
+          </p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+          {upcomingSpeakers.map((speaker) => {
+            const m = speaker.member;
+            if (!m) return null;
+            const date = new Date(speaker.assigned_date + "T12:00:00");
+            const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            return (
+              <a href={`/members/${m.slug}`} class="group text-center">
+                <div class="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-ah-red transition-colors">
+                  {m.headshot_url ? (
+                    <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <div class="w-full h-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400">
+                      {m.first_name?.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <p class="text-sm font-semibold text-ah-dark group-hover:text-ah-red transition-colors">{m.full_name}</p>
+                <p class="text-xs text-ah-red font-medium">{dateStr}</p>
+                {speaker.presentation_topic && (
+                  <p class="text-xs text-ah-gray-text mt-0.5">{speaker.presentation_topic}</p>
+                )}
+              </a>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -1,0 +1,95 @@
+---
+import Base from "@/layouts/Base.astro";
+import { Icon } from "astro-icon/components";
+import { fetchMembers } from "@/lib/supabase";
+
+const chapter = Astro.locals.chapter;
+const sb = Astro.locals.supabase;
+const members = await fetchMembers(sb, chapter.id);
+
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function shortProfession(cat: string): string {
+  const parts = cat.split(">");
+  return parts[parts.length - 1].trim();
+}
+
+// Group members by profession
+const professionMap = new Map<string, { slug: string; label: string; members: typeof members }>();
+for (const m of members) {
+  if (!m.profession_category) continue;
+  const label = shortProfession(m.profession_category);
+  const slug = slugify(label);
+  if (!professionMap.has(slug)) {
+    professionMap.set(slug, { slug, label, members: [] });
+  }
+  professionMap.get(slug)!.members.push(m);
+}
+
+const professions = Array.from(professionMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+---
+
+<Base
+  title="Find a Professional"
+  description={`Find trusted professionals in Southern California through ${chapter.name}. ${professions.length} specialties represented by vetted, referral-based business owners.`}
+>
+
+  <section class="bg-ah-dark text-white py-16 md:py-20">
+    <div class="container mx-auto px-4 text-center max-w-3xl">
+      <p class="text-ah-red text-sm uppercase tracking-wider font-medium mb-3">Trusted Referrals</p>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+        Find a professional
+      </h1>
+      <p class="text-gray-400">
+        Every member has been vetted through our referral-based networking process.
+        When you work with one of us, you're getting someone the chapter trusts.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {professions.map((prof) => (
+          <a
+            href={`/find/${prof.slug}`}
+            class="group flex items-center gap-4 p-4 rounded-xl border border-gray-100 bg-white hover:border-ah-red/30 hover:shadow-md transition-all"
+          >
+            <div class="w-10 h-10 rounded-full bg-ah-red/10 flex items-center justify-center flex-shrink-0 group-hover:bg-ah-red/20 transition-colors">
+              <Icon name="lucide:briefcase" class="w-5 h-5 text-ah-red" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-ah-dark group-hover:text-ah-red transition-colors">
+                {prof.label}
+              </p>
+              <p class="text-xs text-ah-gray-text">
+                {prof.members.length === 1
+                  ? prof.members[0].full_name
+                  : `${prof.members.length} professionals`}
+              </p>
+            </div>
+            <Icon name="lucide:chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-ah-red transition-colors" />
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="py-12 bg-ah-gray text-center">
+    <div class="container mx-auto px-4">
+      <p class="text-ah-gray-text text-sm mb-3">Don't see what you need?</p>
+      <p class="text-ah-dark font-medium mb-4">
+        We're always growing. Visit a meeting and let us connect you.
+      </p>
+      <a
+        href="/visit"
+        class="inline-flex items-center gap-2 bg-ah-red text-white px-6 py-3 rounded-lg font-semibold hover:bg-ah-red-dark transition-colors"
+      >
+        Register to Visit <Icon name="lucide:arrow-right" class="w-4 h-4" />
+      </a>
+    </div>
+  </section>
+
+</Base>

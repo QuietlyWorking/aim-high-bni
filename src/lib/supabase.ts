@@ -137,6 +137,68 @@ export async function fetchMemberRecognitions(sb: SupabaseClient, orgId: string,
   return data as Recognition[];
 }
 
+export interface UpcomingSpeaker {
+  assigned_date: string;
+  presentation_topic: string | null;
+  presentation_category: string | null;
+  member: {
+    slug: string;
+    full_name: string;
+    first_name: string;
+    headshot_url: string | null;
+    profession_category: string | null;
+    business_name: string | null;
+  } | null;
+}
+
+export interface PublicEvent {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  event_date: string;
+  start_time: string;
+  end_time: string | null;
+  event_type: string;
+  format: string;
+  location_name: string | null;
+  location_address: string | null;
+  virtual_link: string | null;
+  max_capacity: number | null;
+}
+
+export async function fetchUpcomingSpeakers(sb: SupabaseClient, orgId: string): Promise<UpcomingSpeaker[]> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await sb
+    .from("speaker_queue")
+    .select(`
+      assigned_date, presentation_topic, presentation_category,
+      member:members(slug, full_name, first_name, headshot_url, profession_category, business_name)
+    `)
+    .eq("organization_id", orgId)
+    .eq("status", "scheduled")
+    .gte("assigned_date", today)
+    .order("assigned_date", { ascending: true })
+    .limit(4);
+  if (error) return [];
+  return data as UpcomingSpeaker[];
+}
+
+export async function fetchPublicEvents(sb: SupabaseClient, orgId: string): Promise<PublicEvent[]> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await sb
+    .from("events")
+    .select("id, name, slug, description, event_date, start_time, end_time, event_type, format, location_name, location_address, virtual_link, max_capacity")
+    .eq("organization_id", orgId)
+    .eq("is_public", true)
+    .eq("status", "published")
+    .gte("event_date", today)
+    .order("event_date", { ascending: true })
+    .limit(20);
+  if (error) return [];
+  return data as PublicEvent[];
+}
+
 export async function fetchChapterStats(sb: SupabaseClient, orgId: string): Promise<ChapterStats> {
   const { count, error } = await sb
     .from("members")

@@ -15,7 +15,7 @@ function isActive(path: string) {
         {chapter.name.replace("BNI", "").trim()} <span class="text-ah-red">BNI</span>
       </span>
     </a>
-    <div class="hidden md:flex items-center gap-8">
+    <div class="hidden md:flex items-center gap-6">
       <a
         href="/"
         class:list={["text-sm font-medium transition-colors", isActive("/") ? "text-ah-red" : "text-ah-dark hover:text-ah-red"]}
@@ -27,6 +27,24 @@ function isActive(path: string) {
         class:list={["text-sm font-medium transition-colors", isActive("/members") ? "text-ah-red" : "text-ah-dark hover:text-ah-red"]}
       >
         Members
+      </a>
+      <a
+        href="/find"
+        class:list={["text-sm font-medium transition-colors", isActive("/find") ? "text-ah-red" : "text-ah-dark hover:text-ah-red"]}
+      >
+        Find a Pro
+      </a>
+      <a
+        href="/events"
+        class:list={["text-sm font-medium transition-colors", isActive("/events") ? "text-ah-red" : "text-ah-dark hover:text-ah-red"]}
+      >
+        Events
+      </a>
+      <a
+        href="/meeting"
+        class:list={["text-sm font-medium transition-colors", isActive("/meeting") ? "text-ah-red" : "text-ah-dark hover:text-ah-red"]}
+      >
+        What to Expect
       </a>
       <a
         href="/visit"

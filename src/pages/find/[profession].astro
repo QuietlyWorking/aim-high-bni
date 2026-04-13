@@ -1,0 +1,166 @@
+---
+import Base from "@/layouts/Base.astro";
+import { Icon } from "astro-icon/components";
+import { fetchMembers, fetchMemberTestimonials } from "@/lib/supabase";
+import { breadcrumbSchema } from "@/lib/schema";
+
+const chapter = Astro.locals.chapter;
+const sb = Astro.locals.supabase;
+const { profession } = Astro.params;
+
+if (!profession) return Astro.redirect("/find");
+
+const allMembers = await fetchMembers(sb, chapter.id);
+
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function shortProfession(cat: string): string {
+  const parts = cat.split(">");
+  return parts[parts.length - 1].trim();
+}
+
+// Find matching members
+const matchingMembers = allMembers.filter((m) => {
+  if (!m.profession_category) return false;
+  return slugify(shortProfession(m.profession_category)) === profession;
+});
+
+if (matchingMembers.length === 0) return Astro.redirect("/find");
+
+const professionLabel = shortProfession(matchingMembers[0].profession_category!);
+
+// Fetch testimonials for all matching members
+const testimonialsByMember = new Map<string, Awaited<ReturnType<typeof fetchMemberTestimonials>>>();
+for (const m of matchingMembers) {
+  const t = await fetchMemberTestimonials(sb, chapter.id, m.slug);
+  if (t.length > 0) testimonialsByMember.set(m.id, t);
+}
+
+const breadcrumb = breadcrumbSchema([
+  { name: "Home", url: `https://${chapter.domain}` },
+  { name: "Find a Professional", url: `https://${chapter.domain}/find` },
+  { name: professionLabel, url: `https://${chapter.domain}/find/${profession}` },
+]);
+---
+
+<Base
+  title={`${professionLabel} in Southern California`}
+  description={`Looking for a trusted ${professionLabel.toLowerCase()} in Southern California? Meet our vetted ${professionLabel.toLowerCase()} professional${matchingMembers.length > 1 ? "s" : ""} at ${chapter.name}.`}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumb)} />
+
+  <section class="bg-ah-dark text-white py-16 md:py-20">
+    <div class="container mx-auto px-4 text-center max-w-3xl">
+      <a href="/find" class="text-ah-red text-sm hover:underline mb-4 inline-flex items-center gap-1">
+        <Icon name="lucide:arrow-left" class="w-3.5 h-3.5" /> All Professions
+      </a>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+        {professionLabel}
+      </h1>
+      <p class="text-gray-400">
+        {matchingMembers.length === 1
+          ? `Our trusted ${professionLabel.toLowerCase()} at ${chapter.name}`
+          : `${matchingMembers.length} trusted ${professionLabel.toLowerCase()} professionals at ${chapter.name}`}
+      </p>
+    </div>
+  </section>
+
+  <section class="py-16 md:py-24">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="space-y-8">
+        {matchingMembers.map((m) => {
+          const testimonials = testimonialsByMember.get(m.id) || [];
+          return (
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div class="p-6 md:p-8 flex flex-col md:flex-row gap-6">
+                {/* Photo + contact */}
+                <div class="flex-shrink-0 text-center md:text-left">
+                  <a href={`/members/${m.slug}`} class="inline-block">
+                    <div class="w-32 h-32 rounded-lg overflow-hidden mx-auto md:mx-0 shadow-md">
+                      {m.headshot_url ? (
+                        <img src={m.headshot_url} alt={m.full_name} class="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div class="w-full h-full bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-400">
+                          {m.first_name?.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                  </a>
+                </div>
+
+                {/* Info */}
+                <div class="flex-1 min-w-0">
+                  <a href={`/members/${m.slug}`} class="hover:text-ah-red transition-colors">
+                    <h2 class="text-xl font-bold text-ah-dark mb-1">{m.full_name}</h2>
+                  </a>
+                  {m.business_name && (
+                    <p class="text-sm text-ah-red font-medium mb-1">{m.business_name}</p>
+                  )}
+                  {m.tagline && (
+                    <p class="text-sm text-ah-gray-text mb-3">{m.tagline}</p>
+                  )}
+                  {m.bio && (
+                    <p class="text-sm text-ah-gray-text leading-relaxed mb-4">{m.bio}</p>
+                  )}
+
+                  {/* Contact links */}
+                  <div class="flex flex-wrap gap-2">
+                    <a
+                      href={`/members/${m.slug}`}
+                      class="inline-flex items-center gap-1.5 text-sm bg-ah-red text-white px-4 py-2 rounded-lg font-medium hover:bg-ah-red-dark transition-colors"
+                    >
+                      <Icon name="lucide:user" class="w-4 h-4" /> View Profile
+                    </a>
+                    {m.public_email && m.email && (
+                      <a href={`mailto:${m.email}`} class="inline-flex items-center gap-1.5 text-sm bg-ah-gray text-ah-dark px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                        <Icon name="lucide:mail" class="w-4 h-4 text-ah-red" /> Email
+                      </a>
+                    )}
+                    {m.website && (
+                      <a href={m.website} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sm bg-ah-gray text-ah-dark px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                        <Icon name="lucide:globe" class="w-4 h-4 text-ah-red" /> Website
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Testimonials */}
+              {testimonials.length > 0 && (
+                <div class="border-t border-gray-100 bg-ah-gray/50 px-6 md:px-8 py-4">
+                  <p class="text-xs text-ah-gray-text uppercase tracking-wider font-medium mb-2">What people say</p>
+                  <div class="space-y-2">
+                    {testimonials.slice(0, 2).map((t) => (
+                      <p class="text-sm text-ah-dark italic">
+                        &ldquo;{t.quote.length > 150 ? t.quote.slice(0, 150) + "..." : t.quote}&rdquo;
+                        {t.author_name && <span class="text-xs text-ah-gray-text not-italic"> — {t.author_name}</span>}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-12 bg-ah-gray text-center">
+    <div class="container mx-auto px-4">
+      <p class="text-ah-dark font-medium mb-4">
+        Want to meet our {professionLabel.toLowerCase()} in person?
+      </p>
+      <a
+        href="/visit"
+        class="inline-flex items-center gap-2 bg-ah-red text-white px-6 py-3 rounded-lg font-semibold hover:bg-ah-red-dark transition-colors"
+      >
+        Visit a Meeting <Icon name="lucide:arrow-right" class="w-4 h-4" />
+      </a>
+    </div>
+  </section>
+
+</Base>
