@@ -33,17 +33,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
       apikey: serviceRoleKey,
       Authorization: `Bearer ${serviceRoleKey}`,
       "Content-Type": "application/json",
-      Prefer: "return=minimal",
     };
+
+    // Resolve member slug to UUID
+    const memberSlug = body.about_member_slug as string;
+    let aboutMemberId: string | null = null;
+
+    if (memberSlug) {
+      const memberRes = await fetch(
+        `${QNT_URL}/rest/v1/members?slug=eq.${encodeURIComponent(memberSlug)}&organization_id=eq.${encodeURIComponent(body.organization_id as string)}&select=id&limit=1`,
+        { headers },
+      );
+      if (memberRes.ok) {
+        const members = await memberRes.json() as Array<{ id: string }>;
+        if (members.length > 0) aboutMemberId = members[0].id;
+      }
+    }
 
     const res = await fetch(`${QNT_URL}/rest/v1/chapter_testimonials`, {
       method: "POST",
-      headers,
+      headers: { ...headers, Prefer: "return=minimal" },
       body: JSON.stringify({
         organization_id: body.organization_id,
         author_name: authorName,
         quote: message,
-        about_member_slug: body.about_member_slug,
+        about_member_id: aboutMemberId,
         source: "website_form",
         status: "pending",
         is_featured: false,
