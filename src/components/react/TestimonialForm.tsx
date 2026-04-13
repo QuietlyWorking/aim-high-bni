@@ -129,7 +129,7 @@ export default function TestimonialForm({ memberSlug, memberName, orgId }: Props
             name="message"
             required
             rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c41230]/50 focus:border-[#c41230] resize-none"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c41230]/50 focus:border-[#c41230] resize-y min-h-[80px]"
             placeholder={`What would you like to say about ${memberName}?`}
           />
         </div>
