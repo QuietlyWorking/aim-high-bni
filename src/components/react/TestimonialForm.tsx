@@ -24,6 +24,7 @@ export default function TestimonialForm({ memberSlug, memberName, orgId }: Props
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           author_name: data.get("author_name"),
+          author_email: data.get("author_email"),
           message: data.get("message"),
           about_member_slug: memberSlug,
           organization_id: orgId,
@@ -109,6 +110,17 @@ export default function TestimonialForm({ memberSlug, memberName, orgId }: Props
             autoFocus
             className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c41230]/50 focus:border-[#c41230]"
             placeholder="Your name"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[#1a1a1a] mb-1">
+            Your Email <span className="font-normal text-[#999]">(optional — so they can say thanks)</span>
+          </label>
+          <input
+            type="email"
+            name="author_email"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c41230]/50 focus:border-[#c41230]"
+            placeholder="you@example.com"
           />
         </div>
         <div>

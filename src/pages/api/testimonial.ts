@@ -37,7 +37,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Resolve member slug to UUID
     const memberSlug = body.about_member_slug as string;
+    const authorEmail = (body.author_email as string || "").trim() || null;
     let aboutMemberId: string | null = null;
+    let authorMemberId: string | null = null;
 
     if (memberSlug) {
       const memberRes = await fetch(
@@ -50,17 +52,33 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
+    // Try to match author email to a chapter member (for reciprocal flow)
+    if (authorEmail) {
+      const authorRes = await fetch(
+        `${QNT_URL}/rest/v1/members?email=eq.${encodeURIComponent(authorEmail)}&organization_id=eq.${encodeURIComponent(body.organization_id as string)}&select=id&limit=1`,
+        { headers },
+      );
+      if (authorRes.ok) {
+        const authors = await authorRes.json() as Array<{ id: string }>;
+        if (authors.length > 0) authorMemberId = authors[0].id;
+      }
+    }
+
     const res = await fetch(`${QNT_URL}/rest/v1/chapter_testimonials`, {
       method: "POST",
       headers: { ...headers, Prefer: "return=minimal" },
       body: JSON.stringify({
         organization_id: body.organization_id,
         author_name: authorName,
+        author_email: authorEmail,
+        author_member_id: authorMemberId,
         quote: message,
         about_member_id: aboutMemberId,
+        about_member_slug: memberSlug || null,
         source: "website_form",
         status: "pending",
         is_featured: false,
+        is_public: false,
       }),
     });
 
