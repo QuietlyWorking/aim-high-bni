@@ -1,11 +1,19 @@
 ---
 import Base from "@/layouts/Base.astro";
 import { Icon } from "astro-icon/components";
-import { fetchPublicEvents } from "@/lib/supabase";
+import { fetchPublicEvents, fetchPastEventRecapPhotos } from "@/lib/supabase";
 
 const chapter = Astro.locals.chapter;
 const sb = Astro.locals.supabase;
 const events = await fetchPublicEvents(sb, chapter.id);
+
+// For recurring events, fetch recap photos from past instances
+const recapPhotoMap = new Map<string, string[]>();
+const parentIds = new Set(events.map(e => e.recurrence_parent_id).filter(Boolean) as string[]);
+for (const pid of parentIds) {
+  const photos = await fetchPastEventRecapPhotos(sb, chapter.id, pid);
+  if (photos.length > 0) recapPhotoMap.set(pid, photos);
+}
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
@@ -57,16 +65,61 @@ const formatLabels: Record<string, string> = {
   </section>
 
   <section class="py-16 md:py-24">
-    <div class="container mx-auto px-4 max-w-3xl">
+    <div class="container mx-auto px-4 max-w-5xl">
 
       {events.length > 0 ? (
-        <div class="space-y-6">
-          {events.map((event) => {
+        <div class="space-y-12">
+          {events.map((event, idx) => {
             const iconName = typeIcons[event.event_type] || "lucide:calendar";
+            const imageRight = idx % 2 === 0;
+
+            // Determine best image: hero > gallery[0] > recap photos
+            const heroImg = event.image_url;
+            const galleryImgs = event.image_urls || [];
+            const recapImgs = event.recurrence_parent_id
+              ? recapPhotoMap.get(event.recurrence_parent_id) || []
+              : [];
+            const displayImage = heroImg || galleryImgs[0] || recapImgs[0] || null;
+            const isRecapPhoto = !heroImg && !galleryImgs[0] && recapImgs.length > 0;
+
             return (
-              <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                <div class="p-6">
-                  <div class="flex items-start gap-4">
+              <a
+                href={`/events/${event.slug}`}
+                class:list={[
+                  "group block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5",
+                  displayImage ? "md:grid md:grid-cols-2" : "",
+                ]}
+              >
+                {/* Image — left or right based on zigzag */}
+                {displayImage && (
+                  <div
+                    class:list={[
+                      "relative overflow-hidden",
+                      imageRight ? "md:order-2" : "md:order-1",
+                    ]}
+                  >
+                    <img
+                      src={displayImage}
+                      alt={event.name}
+                      class="w-full h-48 md:h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    {isRecapPhoto && (
+                      <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
+                        From a past event
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Content */}
+                <div
+                  class:list={[
+                    "p-6 md:p-8 flex flex-col justify-center",
+                    displayImage ? (imageRight ? "md:order-1" : "md:order-2") : "",
+                  ]}
+                >
+                  <div class="flex items-center gap-3 mb-3">
                     {/* Date badge */}
                     <div class="flex-shrink-0 w-14 h-14 bg-ah-red/10 rounded-lg flex flex-col items-center justify-center">
                       <span class="text-xs text-ah-red font-medium uppercase">
@@ -76,10 +129,9 @@ const formatLabels: Record<string, string> = {
                         {new Date(event.event_date + "T12:00:00").getDate()}
                       </span>
                     </div>
-
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-2 mb-1 flex-wrap">
-                        <h2 class="text-lg font-bold text-ah-dark">{event.name}</h2>
+                    <div>
+                      <h2 class="text-xl font-bold text-ah-dark group-hover:text-ah-red transition-colors">{event.name}</h2>
+                      <div class="flex gap-2 mt-0.5">
                         <span class="inline-flex items-center gap-1 text-xs font-medium text-ah-gray-text bg-ah-gray px-2 py-0.5 rounded-full">
                           <Icon name={iconName} class="w-3 h-3" />
                           {event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1)}
@@ -88,31 +140,31 @@ const formatLabels: Record<string, string> = {
                           {formatLabels[event.format] || event.format}
                         </span>
                       </div>
-
-                      <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ah-gray-text mb-2">
-                        <span class="flex items-center gap-1">
-                          <Icon name="lucide:calendar" class="w-3.5 h-3.5" />
-                          {formatDate(event.event_date)}
-                        </span>
-                        <span class="flex items-center gap-1">
-                          <Icon name="lucide:clock" class="w-3.5 h-3.5" />
-                          {formatTime(event.start_time)}{event.end_time ? ` – ${formatTime(event.end_time)}` : ""}
-                        </span>
-                        {event.location_name && (
-                          <span class="flex items-center gap-1">
-                            <Icon name="lucide:map-pin" class="w-3.5 h-3.5" />
-                            {event.location_name}
-                          </span>
-                        )}
-                      </div>
-
-                      {event.description && (
-                        <p class="text-sm text-ah-gray-text leading-relaxed">{event.description}</p>
-                      )}
                     </div>
                   </div>
+
+                  <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ah-gray-text mb-3">
+                    <span class="flex items-center gap-1">
+                      <Icon name="lucide:clock" class="w-3.5 h-3.5" />
+                      {formatTime(event.start_time)}{event.end_time ? ` – ${formatTime(event.end_time)}` : ""}
+                    </span>
+                    {event.location_name && (
+                      <span class="flex items-center gap-1">
+                        <Icon name="lucide:map-pin" class="w-3.5 h-3.5" />
+                        {event.location_name}
+                      </span>
+                    )}
+                  </div>
+
+                  {event.description && (
+                    <p class="text-sm text-ah-gray-text leading-relaxed mb-4">{event.description}</p>
+                  )}
+
+                  <span class="inline-flex items-center gap-1 text-sm text-ah-red font-medium group-hover:underline">
+                    View details <Icon name="lucide:arrow-right" class="w-4 h-4" />
+                  </span>
                 </div>
-              </div>
+              </a>
             );
           })}
         </div>

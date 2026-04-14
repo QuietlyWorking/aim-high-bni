@@ -188,7 +188,7 @@ export async function fetchPublicEvents(sb: SupabaseClient, orgId: string): Prom
   const today = new Date().toISOString().split("T")[0];
   const { data, error } = await sb
     .from("events")
-    .select("id, name, slug, description, event_date, start_time, end_time, event_type, format, location_name, location_address, virtual_link, max_capacity")
+    .select("id, name, slug, description, event_date, start_time, end_time, event_type, format, location_name, location_address, virtual_link, max_capacity, image_url, image_urls, recap_image_urls, recurrence_parent_id")
     .eq("organization_id", orgId)
     .eq("is_public", true)
     .eq("status", "published")
@@ -197,6 +197,25 @@ export async function fetchPublicEvents(sb: SupabaseClient, orgId: string): Prom
     .limit(20);
   if (error) return [];
   return data as PublicEvent[];
+}
+
+export async function fetchPastEventRecapPhotos(sb: SupabaseClient, orgId: string, parentId: string): Promise<string[]> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await sb
+    .from("events")
+    .select("recap_image_urls")
+    .eq("organization_id", orgId)
+    .eq("recurrence_parent_id", parentId)
+    .lt("event_date", today)
+    .order("event_date", { ascending: false })
+    .limit(3);
+  if (error) return [];
+  const photos: string[] = [];
+  for (const e of data || []) {
+    const urls = (e as any).recap_image_urls as string[] | null;
+    if (urls) photos.push(...urls);
+  }
+  return photos.slice(0, 6);
 }
 
 export async function fetchChapterStats(sb: SupabaseClient, orgId: string): Promise<ChapterStats> {

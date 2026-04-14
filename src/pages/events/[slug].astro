@@ -1,0 +1,250 @@
+---
+import Base from "@/layouts/Base.astro";
+import { Icon } from "astro-icon/components";
+import { fetchPastEventRecapPhotos } from "@/lib/supabase";
+import { breadcrumbSchema } from "@/lib/schema";
+
+const chapter = Astro.locals.chapter;
+const sb = Astro.locals.supabase;
+const { slug } = Astro.params;
+
+if (!slug) return Astro.redirect("/events");
+
+// Fetch the event by slug
+const { data: event, error } = await sb
+  .from("events")
+  .select("*")
+  .eq("organization_id", chapter.id)
+  .eq("slug", slug)
+  .eq("is_public", true)
+  .eq("status", "published")
+  .single();
+
+if (error || !event) return Astro.redirect("/events");
+
+// Fetch recap photos from past instances of the same series
+let recapPhotos: string[] = [];
+if (event.recurrence_parent_id) {
+  recapPhotos = await fetchPastEventRecapPhotos(sb, chapter.id, event.recurrence_parent_id);
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+}
+
+function formatTime(t: string): string {
+  const parts = t.split(":");
+  let hours = parseInt(parts[0], 10);
+  const minutes = parts[1] || "00";
+  const ampm = hours >= 12 ? "PM" : "AM";
+  if (hours > 12) hours -= 12;
+  if (hours === 0) hours = 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+const formatLabels: Record<string, string> = {
+  in_person: "In Person",
+  virtual: "Virtual",
+  hybrid: "Hybrid",
+};
+
+const heroImg = event.image_url || (event.image_urls as string[] || [])[0] || null;
+const galleryImgs = [
+  ...(event.image_urls as string[] || []).filter((u: string) => u !== heroImg),
+];
+const allRecapPhotos = event.recap_image_urls as string[] || [];
+
+const breadcrumb = breadcrumbSchema([
+  { name: "Home", url: `https://${chapter.domain}` },
+  { name: "Events", url: `https://${chapter.domain}/events` },
+  { name: event.name, url: `https://${chapter.domain}/events/${slug}` },
+]);
+
+const eventSchema = {
+  "@context": "https://schema.org",
+  "@type": "Event",
+  name: event.name,
+  description: event.description || `${event.name} at ${chapter.name}`,
+  startDate: `${event.event_date}T${event.start_time}`,
+  ...(event.end_time ? { endDate: `${event.event_date}T${event.end_time}` } : {}),
+  eventAttendanceMode: event.format === "virtual"
+    ? "https://schema.org/OnlineEventAttendanceMode"
+    : event.format === "hybrid"
+    ? "https://schema.org/MixedEventAttendanceMode"
+    : "https://schema.org/OfflineEventAttendanceMode",
+  ...(event.location_name ? {
+    location: {
+      "@type": event.format === "virtual" ? "VirtualLocation" : "Place",
+      name: event.location_name,
+      ...(event.location_address ? { address: event.location_address } : {}),
+    },
+  } : {}),
+  organizer: {
+    "@type": "Organization",
+    name: chapter.name,
+    url: `https://${chapter.domain}`,
+  },
+  ...(heroImg ? { image: heroImg } : {}),
+};
+---
+
+<Base
+  title={event.name}
+  description={event.description || `${event.name} — ${formatDate(event.event_date)} at ${chapter.name}`}
+  ogImage={heroImg || undefined}
+  jsonLd={eventSchema}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumb)} />
+
+  <!-- Hero -->
+  {heroImg ? (
+    <section class="relative h-64 md:h-96 overflow-hidden">
+      <img src={heroImg} alt={event.name} class="w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-t from-ah-dark/80 to-transparent"></div>
+      <div class="absolute bottom-0 left-0 right-0 p-6 md:p-10">
+        <div class="container mx-auto max-w-4xl">
+          <a href="/events" class="text-white/70 text-sm hover:text-white mb-3 inline-flex items-center gap-1">
+            <Icon name="lucide:arrow-left" class="w-3.5 h-3.5" /> All Events
+          </a>
+          <h1 class="text-3xl md:text-5xl font-extrabold text-white">{event.name}</h1>
+        </div>
+      </div>
+    </section>
+  ) : (
+    <section class="bg-ah-dark text-white py-12 md:py-16">
+      <div class="container mx-auto px-4 max-w-4xl">
+        <a href="/events" class="text-ah-red text-sm hover:underline mb-4 inline-flex items-center gap-1">
+          <Icon name="lucide:arrow-left" class="w-3.5 h-3.5" /> All Events
+        </a>
+        <h1 class="text-3xl md:text-5xl font-extrabold">{event.name}</h1>
+      </div>
+    </section>
+  )}
+
+  <!-- Event details -->
+  <section class="py-12 md:py-16">
+    <div class="container mx-auto px-4 max-w-4xl">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        {/* Main content */}
+        <div class="md:col-span-2 space-y-8">
+          {event.description && (
+            <div>
+              <h2 class="font-semibold text-ah-dark mb-2">About this event</h2>
+              <p class="text-ah-gray-text leading-relaxed">{event.description}</p>
+            </div>
+          )}
+
+          {/* Photo gallery */}
+          {galleryImgs.length > 0 && (
+            <div>
+              <h2 class="font-semibold text-ah-dark mb-3">Photos</h2>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {galleryImgs.map((url: string) => (
+                  <div class="rounded-lg overflow-hidden">
+                    <img src={url} alt="" class="w-full h-32 object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recap photos from past instances */}
+          {recapPhotos.length > 0 && (
+            <div>
+              <h2 class="font-semibold text-ah-dark mb-1">Last time at this event</h2>
+              <p class="text-sm text-ah-gray-text mb-3">Here's what it looked like at recent gatherings</p>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {recapPhotos.map((url) => (
+                  <div class="rounded-lg overflow-hidden">
+                    <img src={url} alt="" class="w-full h-32 object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Own recap photos (if this is a past event with photos) */}
+          {allRecapPhotos.length > 0 && (
+            <div>
+              <h2 class="font-semibold text-ah-dark mb-1">Event recap</h2>
+              <p class="text-sm text-ah-gray-text mb-3">Photos from this event</p>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {allRecapPhotos.map((url: string) => (
+                  <div class="rounded-lg overflow-hidden">
+                    <img src={url} alt="" class="w-full h-32 object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div class="space-y-4">
+          {/* Info card */}
+          <div class="bg-ah-gray rounded-xl p-5 space-y-4">
+            <div class="flex items-center gap-3">
+              <Icon name="lucide:calendar" class="w-5 h-5 text-ah-red" />
+              <div>
+                <p class="text-sm font-medium text-ah-dark">{formatDate(event.event_date)}</p>
+                <p class="text-xs text-ah-gray-text">
+                  {formatTime(event.start_time)}{event.end_time ? ` – ${formatTime(event.end_time)}` : ""}
+                </p>
+              </div>
+            </div>
+
+            {event.location_name && (
+              <div class="flex items-start gap-3">
+                <Icon name="lucide:map-pin" class="w-5 h-5 text-ah-red mt-0.5" />
+                <div>
+                  <p class="text-sm font-medium text-ah-dark">{event.location_name}</p>
+                  {event.location_address && (
+                    <p class="text-xs text-ah-gray-text">{event.location_address}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div class="flex items-center gap-3">
+              <Icon name={event.format === "virtual" ? "lucide:video" : event.format === "hybrid" ? "lucide:monitor-smartphone" : "lucide:users"} class="w-5 h-5 text-ah-red" />
+              <p class="text-sm text-ah-dark">{formatLabels[event.format] || event.format}</p>
+            </div>
+
+            {event.max_capacity && (
+              <div class="flex items-center gap-3">
+                <Icon name="lucide:ticket" class="w-5 h-5 text-ah-red" />
+                <p class="text-sm text-ah-dark">Limited to {event.max_capacity} spots</p>
+              </div>
+            )}
+          </div>
+
+          {/* Map embed for in-person events */}
+          {event.location_address && event.format !== "virtual" && (
+            <div class="rounded-xl overflow-hidden border border-gray-100">
+              <iframe
+                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(event.location_address)}`}
+                width="100%"
+                height="200"
+                style="border:0;"
+                allowfullscreen
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
+          )}
+
+          {/* CTA */}
+          <a
+            href="/visit"
+            class="block w-full text-center bg-ah-red text-white px-6 py-3 rounded-lg font-semibold hover:bg-ah-red-dark transition-colors"
+          >
+            Register to Visit
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</Base>

@@ -109,4 +109,8 @@ export interface PublicEvent {
   location_address: string | null;
   virtual_link: string | null;
   max_capacity: number | null;
+  image_url: string | null;
+  image_urls: string[] | null;
+  recap_image_urls: string[] | null;
+  recurrence_parent_id: string | null;
 }
