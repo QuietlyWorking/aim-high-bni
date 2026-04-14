@@ -136,49 +136,44 @@ const eventSchema = {
             </div>
           )}
 
-          {/* Photo gallery */}
-          {galleryImgs.length > 0 && (
-            <div>
-              <h2 class="font-semibold text-ah-dark mb-3">Photos</h2>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {galleryImgs.map((url: string) => (
-                  <div class="rounded-lg overflow-hidden">
-                    <img src={url} alt="" class="w-full h-32 object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
-                  </div>
-                ))}
+          {/* All photos — promo, recap from this event, and recap from past series events */}
+          {(() => {
+            const allEventPhotos = [
+              ...galleryImgs,
+              ...allRecapPhotos,
+              ...recapPhotos,
+            ].filter((v: string, i: number, a: string[]) => a.indexOf(v) === i);
+            const hasSeriesPhotos = recapPhotos.length > 0 && galleryImgs.length === 0 && allRecapPhotos.length === 0;
+            return allEventPhotos.length > 0 ? (
+              <div>
+                <h2 class="font-semibold text-ah-dark mb-1">Photos</h2>
+                {hasSeriesPhotos && (
+                  <p class="text-sm text-ah-gray-text mb-3">From recent gatherings of this event</p>
+                )}
+                <div class:list={[
+                  "grid gap-2 mt-2",
+                  allEventPhotos.length === 1 ? "grid-cols-1" : allEventPhotos.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3",
+                ]}>
+                  {allEventPhotos.map((url: string, i: number) => (
+                    <div class:list={[
+                      "rounded-lg overflow-hidden",
+                      i === 0 && allEventPhotos.length > 2 ? "col-span-2 sm:col-span-1" : "",
+                    ]}>
+                      <img
+                        src={url}
+                        alt=""
+                        class:list={[
+                          "w-full object-cover hover:scale-105 transition-transform duration-300",
+                          i === 0 && allEventPhotos.length > 2 ? "h-48" : "h-40",
+                        ]}
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Recap photos from past instances */}
-          {recapPhotos.length > 0 && (
-            <div>
-              <h2 class="font-semibold text-ah-dark mb-1">Last time at this event</h2>
-              <p class="text-sm text-ah-gray-text mb-3">Here's what it looked like at recent gatherings</p>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {recapPhotos.map((url) => (
-                  <div class="rounded-lg overflow-hidden">
-                    <img src={url} alt="" class="w-full h-32 object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Own recap photos (if this is a past event with photos) */}
-          {allRecapPhotos.length > 0 && (
-            <div>
-              <h2 class="font-semibold text-ah-dark mb-1">Event recap</h2>
-              <p class="text-sm text-ah-gray-text mb-3">Photos from this event</p>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {allRecapPhotos.map((url: string) => (
-                  <div class="rounded-lg overflow-hidden">
-                    <img src={url} alt="" class="w-full h-32 object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            ) : null;
+          })()}
         </div>
 
         {/* Sidebar */}

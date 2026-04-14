@@ -79,32 +79,63 @@ const formatLabels: Record<string, string> = {
             const recapImgs = event.recurrence_parent_id
               ? recapPhotoMap.get(event.recurrence_parent_id) || []
               : [];
-            const displayImage = heroImg || galleryImgs[0] || recapImgs[0] || null;
-            const isRecapPhoto = !heroImg && !galleryImgs[0] && recapImgs.length > 0;
+            // Collect all photos: hero, gallery, recap from this event, recap from series
+            const allPhotos = [
+              ...(heroImg ? [heroImg] : []),
+              ...galleryImgs,
+              ...recapImgs,
+            ].filter((v, i, a) => a.indexOf(v) === i); // dedupe
+            const hasPhotos = allPhotos.length > 0;
+            const hasRecapOnly = !heroImg && galleryImgs.length === 0 && recapImgs.length > 0;
 
             return (
               <a
                 href={`/events/${event.slug}`}
                 class:list={[
                   "group block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5",
-                  displayImage ? "md:grid md:grid-cols-2" : "",
+                  hasPhotos ? "md:grid md:grid-cols-2" : "",
                 ]}
               >
-                {/* Image — left or right based on zigzag */}
-                {displayImage && (
+                {/* Photos — left or right based on zigzag */}
+                {hasPhotos && (
                   <div
                     class:list={[
                       "relative overflow-hidden",
                       imageRight ? "md:order-2" : "md:order-1",
                     ]}
                   >
-                    <img
-                      src={displayImage}
-                      alt={event.name}
-                      class="w-full h-48 md:h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    {isRecapPhoto && (
+                    {allPhotos.length === 1 ? (
+                      <img
+                        src={allPhotos[0]}
+                        alt={event.name}
+                        class="w-full h-48 md:h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : allPhotos.length === 2 ? (
+                      <div class="grid grid-cols-2 h-48 md:h-full">
+                        {allPhotos.slice(0, 2).map((url) => (
+                          <img src={url} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div class="grid grid-cols-2 grid-rows-2 h-48 md:h-full">
+                        <img src={allPhotos[0]} alt="" class="w-full h-full object-cover row-span-2 group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                        <img src={allPhotos[1]} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                        {allPhotos.length === 3 ? (
+                          <img src={allPhotos[2]} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                        ) : (
+                          <div class="relative">
+                            <img src={allPhotos[2]} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                            {allPhotos.length > 3 && (
+                              <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <span class="text-white font-bold text-lg">+{allPhotos.length - 3}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {hasRecapOnly && (
                       <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
                         From a past event
                       </span>
@@ -116,7 +147,7 @@ const formatLabels: Record<string, string> = {
                 <div
                   class:list={[
                     "p-6 md:p-8 flex flex-col justify-center",
-                    displayImage ? (imageRight ? "md:order-1" : "md:order-2") : "",
+                    hasPhotos ? (imageRight ? "md:order-1" : "md:order-2") : "",
                   ]}
                 >
                   <div class="flex items-center gap-3 mb-3">
