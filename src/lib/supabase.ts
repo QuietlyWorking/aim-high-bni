@@ -199,6 +199,25 @@ export async function fetchPublicEvents(sb: SupabaseClient, orgId: string): Prom
   return data as PublicEvent[];
 }
 
+export async function fetchPastPublicEvents(sb: SupabaseClient, orgId: string, limit = 10): Promise<PublicEvent[]> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await sb
+    .from("events")
+    .select("id, name, slug, description, event_date, start_time, end_time, event_type, format, location_name, location_address, virtual_link, max_capacity, image_url, image_urls, recap_image_urls, recurrence_parent_id")
+    .eq("organization_id", orgId)
+    .eq("is_public", true)
+    .eq("status", "published")
+    .lt("event_date", today)
+    .order("event_date", { ascending: false })
+    .limit(limit);
+  if (error) return [];
+  // Only return events that have at least one photo
+  return (data || []).filter((e: any) => {
+    const hasImg = e.image_url || (e.image_urls && e.image_urls.length > 0) || (e.recap_image_urls && e.recap_image_urls.length > 0);
+    return hasImg;
+  }) as PublicEvent[];
+}
+
 export async function fetchPastEventRecapPhotos(sb: SupabaseClient, orgId: string, parentId: string): Promise<string[]> {
   const today = new Date().toISOString().split("T")[0];
   // Include both the parent event itself and its children

@@ -1,11 +1,12 @@
 ---
 import Base from "@/layouts/Base.astro";
 import { Icon } from "astro-icon/components";
-import { fetchPublicEvents, fetchPastEventRecapPhotos } from "@/lib/supabase";
+import { fetchPublicEvents, fetchPastPublicEvents, fetchPastEventRecapPhotos } from "@/lib/supabase";
 
 const chapter = Astro.locals.chapter;
 const sb = Astro.locals.supabase;
 const events = await fetchPublicEvents(sb, chapter.id);
+const pastEvents = await fetchPastPublicEvents(sb, chapter.id, 6);
 
 // For recurring events, fetch recap photos from past instances
 const recapPhotoMap = new Map<string, string[]>();
@@ -213,6 +214,62 @@ const formatLabels: Record<string, string> = {
 
     </div>
   </section>
+
+  <!-- Past events with photos -->
+  {pastEvents.length > 0 && (
+    <section class="py-16 md:py-24 bg-ah-gray">
+      <div class="container mx-auto px-4 max-w-5xl">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl md:text-4xl font-bold text-ah-dark mb-3">
+            Here's what you missed
+          </h2>
+          <p class="text-ah-gray-text">
+            A look back at recent events
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {pastEvents.map((pe) => {
+            const photos = [
+              ...(pe.image_url ? [pe.image_url] : []),
+              ...(pe.image_urls || []),
+              ...(pe.recap_image_urls || []),
+            ].filter((v, i, a) => a.indexOf(v) === i);
+            const rotations = ['-2deg', '1.5deg', '-1deg', '2.5deg', '-3deg', '1deg'];
+
+            return (
+              <a href={`/events/${pe.slug}`} class="group block">
+                {/* Scattered photo stack */}
+                <div class="relative h-[220px] mb-3">
+                  {photos.slice(0, 3).map((url, pi) => {
+                    const rot = rotations[pi];
+                    const xShift = pi === 0 ? '10%' : pi === 1 ? '35%' : '20%';
+                    const yShift = pi === 0 ? '0px' : pi === 1 ? '15px' : '40px';
+                    const z = 3 - pi;
+                    return (
+                      <div
+                        class="absolute shadow-lg rounded-lg overflow-hidden border-4 border-white group-hover:shadow-xl transition-shadow"
+                        style={`transform: rotate(${rot}); z-index: ${z}; left: ${xShift}; top: ${yShift}; width: ${pi === 0 ? '60%' : '50%'};`}
+                      >
+                        <img src={url} alt="" class:list={["w-full object-cover", pi === 0 ? "h-[160px]" : "h-[120px]"]} loading="lazy" />
+                      </div>
+                    );
+                  })}
+                </div>
+                <h3 class="text-lg font-bold text-ah-dark group-hover:text-ah-red transition-colors">{pe.name}</h3>
+                <p class="text-sm text-ah-gray-text">
+                  {new Date(pe.event_date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  {pe.location_name ? ` — ${pe.location_name}` : ""}
+                </p>
+                {photos.length > 3 && (
+                  <p class="text-xs text-ah-red mt-1">{photos.length} photos</p>
+                )}
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )}
 
   <!-- Weekly meeting CTA -->
   <section class="py-12 bg-ah-gray">
