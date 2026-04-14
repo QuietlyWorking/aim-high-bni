@@ -68,90 +68,86 @@ const formatLabels: Record<string, string> = {
     <div class="container mx-auto px-4 max-w-5xl">
 
       {events.length > 0 ? (
-        <div class="space-y-12">
+        <div class="space-y-24">
           {events.map((event, idx) => {
             const iconName = typeIcons[event.event_type] || "lucide:calendar";
-            const imageRight = idx % 2 === 0;
+            const photosRight = idx % 2 === 0;
 
-            // Determine best image: hero > gallery[0] > recap photos
             const heroImg = event.image_url;
             const galleryImgs = event.image_urls || [];
             const recapImgs = event.recurrence_parent_id
               ? recapPhotoMap.get(event.recurrence_parent_id) || []
               : [];
-            // Collect all photos: hero, gallery, recap from this event, recap from series
             const allPhotos = [
               ...(heroImg ? [heroImg] : []),
               ...galleryImgs,
               ...recapImgs,
-            ].filter((v, i, a) => a.indexOf(v) === i); // dedupe
+            ].filter((v, i, a) => a.indexOf(v) === i);
             const hasPhotos = allPhotos.length > 0;
-            const hasRecapOnly = !heroImg && galleryImgs.length === 0 && recapImgs.length > 0;
+
+            // Deterministic rotations per photo based on index
+            const rotations = ['-3deg', '2deg', '-1.5deg', '3.5deg', '-2deg', '1deg'];
+            const offsets = ['0px', '-8px', '12px', '-4px', '6px', '-10px'];
 
             return (
-              <a
-                href={`/events/${event.slug}`}
-                class:list={[
-                  "group block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all hover:-translate-y-0.5",
-                  hasPhotos ? "md:grid md:grid-cols-2" : "",
-                ]}
-              >
-                {/* Photos — left or right based on zigzag */}
+              <div class="relative">
+                {/* Scattered photos */}
                 {hasPhotos && (
                   <div
                     class:list={[
-                      "relative overflow-hidden",
-                      imageRight ? "md:order-2" : "md:order-1",
+                      "hidden md:block absolute top-1/2 -translate-y-1/2 w-[320px]",
+                      photosRight ? "right-0 lg:-right-4" : "left-0 lg:-left-4",
                     ]}
                   >
-                    {allPhotos.length === 1 ? (
-                      <img
-                        src={allPhotos[0]}
-                        alt={event.name}
-                        class="w-full h-48 md:h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    ) : allPhotos.length === 2 ? (
-                      <div class="grid grid-cols-2 h-48 md:h-full">
-                        {allPhotos.slice(0, 2).map((url) => (
-                          <img src={url} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div class="grid grid-cols-2 grid-rows-2 h-48 md:h-full">
-                        <img src={allPhotos[0]} alt="" class="w-full h-full object-cover row-span-2 group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                        <img src={allPhotos[1]} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                        {allPhotos.length === 3 ? (
-                          <img src={allPhotos[2]} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                        ) : (
-                          <div class="relative">
-                            <img src={allPhotos[2]} alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                            {allPhotos.length > 3 && (
-                              <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                <span class="text-white font-bold text-lg">+{allPhotos.length - 3}</span>
-                              </div>
-                            )}
+                    <div class="relative h-[280px]">
+                      {allPhotos.slice(0, 4).map((url, pi) => {
+                        const rot = rotations[pi % rotations.length];
+                        const yOff = offsets[pi % offsets.length];
+                        const zIndex = allPhotos.length - pi;
+                        // Stagger positions: fan out from center
+                        const xShift = pi === 0 ? '0px' : pi === 1 ? '60px' : pi === 2 ? '20px' : '80px';
+                        const yShift = pi === 0 ? '0px' : pi === 1 ? '-20px' : pi === 2 ? '50px' : '30px';
+                        return (
+                          <div
+                            class="absolute shadow-xl rounded-lg overflow-hidden border-4 border-white transition-transform duration-500 hover:scale-105 hover:z-50 hover:shadow-2xl"
+                            style={`transform: rotate(${rot}) translateY(${yOff}); z-index: ${zIndex}; left: ${xShift}; top: ${yShift}; width: ${pi === 0 ? '220px' : '180px'};`}
+                          >
+                            <img
+                              src={url}
+                              alt=""
+                              class:list={["w-full object-cover", pi === 0 ? "h-[180px]" : "h-[140px]"]}
+                              loading="lazy"
+                            />
                           </div>
-                        )}
-                      </div>
-                    )}
-                    {hasRecapOnly && (
-                      <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
-                        From a past event
-                      </span>
-                    )}
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
-                {/* Content */}
-                <div
+                {/* Mobile photo strip */}
+                {hasPhotos && (
+                  <div class="md:hidden flex gap-3 overflow-x-auto pb-3 mb-4 -mx-4 px-4 snap-x">
+                    {allPhotos.slice(0, 4).map((url, pi) => (
+                      <div
+                        class="flex-shrink-0 w-48 rounded-lg overflow-hidden border-4 border-white shadow-lg snap-start"
+                        style={`transform: rotate(${rotations[pi % rotations.length]});`}
+                      >
+                        <img src={url} alt="" class="w-full h-36 object-cover" loading="lazy" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Event card */}
+                <a
+                  href={`/events/${event.slug}`}
                   class:list={[
-                    "p-6 md:p-8 flex flex-col justify-center",
-                    hasPhotos ? (imageRight ? "md:order-1" : "md:order-2") : "",
+                    "group block bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-8 hover:shadow-lg transition-all hover:-translate-y-0.5 relative z-10",
+                    hasPhotos ? (photosRight ? "md:mr-[340px]" : "md:ml-[340px]") : "max-w-3xl mx-auto",
                   ]}
                 >
                   <div class="flex items-center gap-3 mb-3">
-                    {/* Date badge */}
                     <div class="flex-shrink-0 w-14 h-14 bg-ah-red/10 rounded-lg flex flex-col items-center justify-center">
                       <span class="text-xs text-ah-red font-medium uppercase">
                         {new Date(event.event_date + "T12:00:00").toLocaleDateString("en-US", { month: "short" })}
@@ -194,8 +190,8 @@ const formatLabels: Record<string, string> = {
                   <span class="inline-flex items-center gap-1 text-sm text-ah-red font-medium group-hover:underline">
                     View details <Icon name="lucide:arrow-right" class="w-4 h-4" />
                   </span>
-                </div>
-              </a>
+                </a>
+              </div>
             );
           })}
         </div>
