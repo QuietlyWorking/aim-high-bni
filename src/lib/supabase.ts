@@ -201,11 +201,12 @@ export async function fetchPublicEvents(sb: SupabaseClient, orgId: string): Prom
 
 export async function fetchPastEventRecapPhotos(sb: SupabaseClient, orgId: string, parentId: string): Promise<string[]> {
   const today = new Date().toISOString().split("T")[0];
+  // Include both the parent event itself and its children
   const { data, error } = await sb
     .from("events")
     .select("recap_image_urls")
     .eq("organization_id", orgId)
-    .eq("recurrence_parent_id", parentId)
+    .or(`recurrence_parent_id.eq.${parentId},id.eq.${parentId}`)
     .lt("event_date", today)
     .order("event_date", { ascending: false })
     .limit(3);
