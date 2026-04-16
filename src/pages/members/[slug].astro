@@ -24,7 +24,7 @@ if (!member) {
 }
 
 const allQuotes = [
-  ...testimonials.map((t) => ({ text: t.quote, source: "testimonial" as const, from: null as string | null })),
+  ...testimonials.map((t) => ({ text: t.quote, source: "testimonial" as const, from: t.author_name || null })),
   ...recognitions.map((r) => ({ text: r.message, source: "recognition" as const, from: r.from_member_name })),
 ];
 
@@ -137,7 +137,7 @@ const breadcrumb = breadcrumbSchema([
               <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
                 <Icon name="lucide:quote" class="w-6 h-6 text-ah-red/20 mb-2" />
                 <p class="text-ah-dark text-sm leading-relaxed">&ldquo;{q.text}&rdquo;</p>
-                {q.source === "recognition" && q.from && (
+                {q.from && (
                   <p class="text-xs text-ah-gray-text mt-2">&mdash; {q.from}</p>
                 )}
               </div>
