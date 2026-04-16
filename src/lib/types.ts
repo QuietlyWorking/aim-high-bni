@@ -46,6 +46,8 @@ export interface Member {
   public_phone: boolean;
   public_email: boolean;
   testimonials_enabled: boolean;
+  card_shareable: boolean;
+  card_redirect_url: string | null;
 }
 
 export interface Testimonial {

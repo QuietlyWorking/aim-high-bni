@@ -94,6 +94,7 @@ export async function fetchMember(sb: SupabaseClient, orgId: string, slug: strin
     .eq("organization_id", orgId)
     .eq("slug", slug)
     .eq("status", "active")
+    .eq("public_profile", true)
     .single();
   if (error) return null;
   return data as Member;
@@ -173,7 +174,7 @@ export async function fetchUpcomingSpeakers(sb: SupabaseClient, orgId: string): 
     .from("speaker_queue")
     .select(`
       assigned_date, presentation_topic, presentation_category,
-      member:members(slug, full_name, first_name, headshot_url, profession_category, business_name)
+      member:members(slug, full_name, first_name, headshot_url, profession_category, business_name, public_profile)
     `)
     .eq("organization_id", orgId)
     .eq("status", "scheduled")
@@ -181,7 +182,8 @@ export async function fetchUpcomingSpeakers(sb: SupabaseClient, orgId: string): 
     .order("assigned_date", { ascending: true })
     .limit(4);
   if (error) return [];
-  return data as UpcomingSpeaker[];
+  return (data as Array<UpcomingSpeaker & { member: { public_profile?: boolean } | null }>)
+    .filter((s) => s.member && s.member.public_profile !== false) as UpcomingSpeaker[];
 }
 
 export async function fetchPublicEvents(sb: SupabaseClient, orgId: string): Promise<PublicEvent[]> {

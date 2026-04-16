@@ -24,9 +24,9 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     Authorization: `Bearer ${serviceRoleKey}`,
   };
 
-  // Fetch member data
+  // Fetch member data (includes privacy gates: public_profile + card_shareable + card_redirect_url)
   const memberResp = await fetch(
-    `${QNT_URL}/rest/v1/members?slug=eq.${slug}&organization_id=eq.${orgId}&status=eq.active&select=id,full_name,slug,business_name,profession_category,tagline,card_jpg_url,headshot_url&limit=1`,
+    `${QNT_URL}/rest/v1/members?slug=eq.${slug}&organization_id=eq.${orgId}&status=eq.active&select=id,full_name,slug,business_name,profession_category,tagline,card_jpg_url,headshot_url,public_profile,card_shareable,card_redirect_url&limit=1`,
     { headers }
   );
   const members = await memberResp.json() as Record<string, unknown>[];
@@ -37,6 +37,8 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
 
   const member = members[0];
   const cardImage = (member.card_jpg_url || member.headshot_url || "") as string;
+  const cardBlocked = member.public_profile === false || member.card_shareable === false;
+  const redirectUrl = (member.card_redirect_url as string | null) || null;
   const title = `${member.full_name} — Aim High BNI`;
   const description = [member.profession_category, member.business_name, member.tagline]
     .filter(Boolean)
@@ -102,6 +104,22 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
         body: JSON.stringify({ token_param: shareToken }),
       }).catch(() => {});
     }
+  }
+
+  // Privacy gate: when card sharing is off OR the member is hidden from public,
+  // either 302-redirect to the member's configured fallback (clean URL — no ?s= token
+  // leaked to the destination) or 404. Tracking above already credited the sharer.
+  if (cardBlocked) {
+    if (redirectUrl) {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: redirectUrl, "Cache-Control": "no-cache" },
+      });
+    }
+    return new Response("Not found", {
+      status: 404,
+      headers: { "Content-Type": "text/plain;charset=UTF-8", "Cache-Control": "no-cache" },
+    });
   }
 
   const html = `<!DOCTYPE html>
