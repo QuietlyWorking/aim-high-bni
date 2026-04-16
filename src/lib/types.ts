@@ -45,6 +45,7 @@ export interface Member {
   public_profile: boolean;
   public_phone: boolean;
   public_email: boolean;
+  testimonials_enabled: boolean;
 }
 
 export interface Testimonial {

@@ -147,12 +147,14 @@ const breadcrumb = breadcrumbSchema([
       )}
 
       <!-- Say something nice -->
-      <TestimonialForm
-        client:visible
-        memberSlug={member.slug}
-        memberName={member.first_name}
-        orgId={chapter.id}
-      />
+      {member.testimonials_enabled !== false && (
+        <TestimonialForm
+          client:visible
+          memberSlug={member.slug}
+          memberName={member.first_name}
+          orgId={chapter.id}
+        />
+      )}
 
       <!-- CTA -->
       <div class="text-center mt-12 py-10 bg-white rounded-xl shadow-sm border border-gray-100">

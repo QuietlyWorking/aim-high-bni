@@ -43,12 +43,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     if (memberSlug) {
       const memberRes = await fetch(
-        `${QNT_URL}/rest/v1/members?slug=eq.${encodeURIComponent(memberSlug)}&organization_id=eq.${encodeURIComponent(body.organization_id as string)}&select=id&limit=1`,
+        `${QNT_URL}/rest/v1/members?slug=eq.${encodeURIComponent(memberSlug)}&organization_id=eq.${encodeURIComponent(body.organization_id as string)}&select=id,testimonials_enabled&limit=1`,
         { headers },
       );
       if (memberRes.ok) {
-        const members = await memberRes.json() as Array<{ id: string }>;
-        if (members.length > 0) aboutMemberId = members[0].id;
+        const members = await memberRes.json() as Array<{ id: string; testimonials_enabled: boolean }>;
+        if (members.length > 0) {
+          if (members[0].testimonials_enabled === false) {
+            return new Response(
+              JSON.stringify({ error: "Submissions are not being accepted for this member." }),
+              { status: 403, headers: corsHeaders },
+            );
+          }
+          aboutMemberId = members[0].id;
+        }
       }
     }
 
