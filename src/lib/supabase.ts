@@ -75,29 +75,61 @@ function mapOrg(row: Record<string, unknown>): OrgConfig {
   };
 }
 
+// The member columns this public site may read. NEVER select("*") on members: the public key can read only these
+// columns (2026-09-26), and a star select fails outright. A member's email and phone come ONLY from the
+// public_members view, which returns each one only when that member chose to show it. Before this, the site read
+// the raw row, so anyone with the public key could read the phone numbers of members who had hidden them.
+const PUBLIC_MEMBER_COLUMNS = [
+  "id", "slug", "first_name", "last_name", "full_name", "headshot_url", "business_name", "business_logo_url",
+  "profession_category", "tagline", "bio", "ideal_referral", "linkedin_url", "website", "instagram_handle",
+  "status", "join_date", "card_jpg_url", "card_generated_at", "public_profile", "public_phone", "public_email",
+  "testimonials_enabled", "card_shareable", "card_redirect_url",
+].join(", ");
+
+type PublicMemberRow = Omit<Member, "email" | "phone" | "role" | "testimonial">;
+
+// Attach each member's public contact details (null unless the member chose to show them).
+async function withPublicContact(sb: SupabaseClient, rows: PublicMemberRow[]): Promise<Member[]> {
+  if (rows.length === 0) return [];
+  const { data, error } = await sb
+    .from("public_members")
+    .select("id, email, phone")
+    .in("id", rows.map((r) => r.id));
+  if (error) throw error;
+  const contact = new Map((data || []).map((c) => [c.id as string, c]));
+  return rows.map((r) => ({
+    ...r,
+    email: (contact.get(r.id)?.email as string | null) ?? null,
+    phone: (contact.get(r.id)?.phone as string | null) ?? null,
+    role: "member",
+    testimonial: null,
+  }));
+}
+
 export async function fetchMembers(sb: SupabaseClient, orgId: string): Promise<Member[]> {
   const { data, error } = await sb
     .from("members")
-    .select("*")
+    .select(PUBLIC_MEMBER_COLUMNS)
     .eq("organization_id", orgId)
     .eq("status", "active")
     .eq("public_profile", true)
     .order("full_name");
   if (error) throw error;
-  return data as Member[];
+  return withPublicContact(sb, (data || []) as unknown as PublicMemberRow[]);
 }
 
 export async function fetchMember(sb: SupabaseClient, orgId: string, slug: string): Promise<Member | null> {
   const { data, error } = await sb
     .from("members")
-    .select("*")
+    .select(PUBLIC_MEMBER_COLUMNS)
     .eq("organization_id", orgId)
     .eq("slug", slug)
     .eq("status", "active")
     .eq("public_profile", true)
     .single();
-  if (error) return null;
-  return data as Member;
+  if (error || !data) return null;
+  const [member] = await withPublicContact(sb, [data as unknown as PublicMemberRow]);
+  return member ?? null;
 }
 
 export async function fetchTestimonials(sb: SupabaseClient, orgId: string, featuredOnly = false): Promise<Testimonial[]> {
