@@ -6,6 +6,14 @@ export function createSupabaseClient(url: string, key: string): SupabaseClient {
   return createClient(url, key);
 }
 
+// The chapter columns this public site may read. NEVER select("*") on organizations: the public key can read only these
+// columns (2026-09-26), and a star select fails outright. Before this, the site read the whole row, so anyone with the
+// public key could read the chapter's private settings (including member growth notes), dues and roster setup.
+const PUBLIC_ORG_COLUMNS = [
+  "id", "name", "slug", "domain", "chapter_type", "region", "meeting_day", "meeting_time", "meeting_location",
+  "meeting_format", "timezone", "logo_url", "member_count", "max_members",
+].join(", ");
+
 export async function fetchOrgByDomain(
   sb: SupabaseClient,
   domain: string,
@@ -17,7 +25,7 @@ export async function fetchOrgByDomain(
   // Try exact domain match first
   const { data, error } = await sb
     .from("organizations")
-    .select("*")
+    .select(PUBLIC_ORG_COLUMNS)
     .eq("domain", cleanDomain)
     .eq("subscription_status", "active")
     .single();
@@ -27,7 +35,7 @@ export async function fetchOrgByDomain(
     if (fallbackOrgId) {
       const { data: fallback } = await sb
         .from("organizations")
-        .select("*")
+        .select(PUBLIC_ORG_COLUMNS)
         .eq("id", fallbackOrgId)
         .single();
       if (fallback) return mapOrg(fallback);
@@ -70,8 +78,9 @@ function mapOrg(row: Record<string, unknown>): OrgConfig {
     logoUrl: row.logo_url as string | null,
     memberCount: row.member_count as number || 0,
     maxMembers: row.max_members as number || 40,
-    visitorRegistrarName: row.visitor_registrar_name as string | null,
-    visitorRegistrarEmail: row.visitor_registrar_email as string | null,
+    // Not public (and not shown anywhere on the site): kept in the type, never read.
+    visitorRegistrarName: null,
+    visitorRegistrarEmail: null,
   };
 }
 
