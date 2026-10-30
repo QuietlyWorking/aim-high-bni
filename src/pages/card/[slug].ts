@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const QNT_URL = "https://caeiaprjizteokoenzad.supabase.co";
 
@@ -24,20 +25,26 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     Authorization: `Bearer ${serviceRoleKey}`,
   };
 
-  // Fetch member data (includes privacy gates: public_profile + card_shareable + card_redirect_url)
-  const memberResp = await fetch(
-    `${QNT_URL}/rest/v1/members?slug=eq.${slug}&organization_id=eq.${orgId}&status=eq.active&select=id,full_name,slug,business_name,profession_category,tagline,card_jpg_url,headshot_url,public_profile,card_shareable,card_redirect_url&limit=1`,
-    { headers }
-  );
-  const members = await memberResp.json() as Record<string, unknown>[];
+  // The member as the public may see them (2026-10-30, QNT member launch), read with the public key from the
+  // public_members view: it holds a member only while they are listed for everyone, and their card, photo and tagline
+  // only when they show them to everyone. A member who is not listed reads exactly like a name that does not exist.
+  // The service key stays for the click log below; it never reads a member.
+  const sb = (locals as Record<string, unknown>).supabase as SupabaseClient;
+  const { data: member } = await sb
+    .from("public_members")
+    .select("id, full_name, slug, business_name, profession_category, tagline, card_jpg_url, headshot_url, card_shareable, card_redirect_url")
+    .eq("slug", slug!)
+    .eq("organization_id", orgId)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
 
-  if (!members || members.length === 0) {
+  if (!member) {
     return Response.redirect(`https://aimhighbni.com/members`, 302);
   }
 
-  const member = members[0];
   const cardImage = (member.card_jpg_url || member.headshot_url || "") as string;
-  const cardBlocked = member.public_profile === false || member.card_shareable === false;
+  const cardBlocked = member.card_shareable === false;
   const redirectUrl = (member.card_redirect_url as string | null) || null;
   const title = `${member.full_name} — Aim High BNI`;
   const description = [member.profession_category, member.business_name, member.tagline]

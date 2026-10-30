@@ -84,61 +84,54 @@ function mapOrg(row: Record<string, unknown>): OrgConfig {
   };
 }
 
-// The member columns this public site may read. NEVER select("*") on members: the public key can read only these
-// columns (2026-09-26), and a star select fails outright. A member's email and phone come ONLY from the
-// public_members view, which returns each one only when that member chose to show it. Before this, the site read
-// the raw row, so anyone with the public key could read the phone numbers of members who had hidden them.
+// The member columns this public site reads, ONLY from the public_members view (2026-10-30, QNT member launch). The
+// view holds a member only while they are listed for everyone, and each piece (photo, logo, tagline, bio, links, card,
+// email, phone) only when that member shows it to everyone; names, business and category are the member's own wording
+// where they gave one. Never read these from members: QNT migration 063 takes them away from the public key, and a
+// direct read would skip each member's choice. NEVER select("*"): name the columns.
 const PUBLIC_MEMBER_COLUMNS = [
   "id", "slug", "first_name", "last_name", "full_name", "headshot_url", "business_name", "business_logo_url",
   "profession_category", "tagline", "bio", "ideal_referral", "linkedin_url", "website", "instagram_handle",
-  "status", "join_date", "card_jpg_url", "card_generated_at", "public_profile", "public_phone", "public_email",
-  "testimonials_enabled", "card_shareable", "card_redirect_url",
+  "status", "join_date", "card_jpg_url", "card_generated_at", "testimonials_enabled", "card_shareable",
+  "card_redirect_url", "email", "phone",
 ].join(", ");
 
-type PublicMemberRow = Omit<Member, "email" | "phone" | "role" | "testimonial">;
+type PublicMemberRow = Omit<Member, "public_profile" | "public_phone" | "public_email" | "role" | "testimonial">;
 
-// Attach each member's public contact details (null unless the member chose to show them).
-async function withPublicContact(sb: SupabaseClient, rows: PublicMemberRow[]): Promise<Member[]> {
-  if (rows.length === 0) return [];
-  const { data, error } = await sb
-    .from("public_members")
-    .select("id, email, phone")
-    .in("id", rows.map((r) => r.id));
-  if (error) throw error;
-  const contact = new Map((data || []).map((c) => [c.id as string, c]));
-  return rows.map((r) => ({
+// The view has already applied each member's choices: every row is listed, and an email or phone is there only when the
+// member shows it. The three switches the pages test are read from that.
+function toMember(r: PublicMemberRow): Member {
+  return {
     ...r,
-    email: (contact.get(r.id)?.email as string | null) ?? null,
-    phone: (contact.get(r.id)?.phone as string | null) ?? null,
+    public_profile: true,
+    public_email: Boolean(r.email),
+    public_phone: Boolean(r.phone),
     role: "member",
     testimonial: null,
-  }));
+  };
 }
 
 export async function fetchMembers(sb: SupabaseClient, orgId: string): Promise<Member[]> {
   const { data, error } = await sb
-    .from("members")
+    .from("public_members")
     .select(PUBLIC_MEMBER_COLUMNS)
     .eq("organization_id", orgId)
     .eq("status", "active")
-    .eq("public_profile", true)
     .order("full_name");
   if (error) throw error;
-  return withPublicContact(sb, (data || []) as unknown as PublicMemberRow[]);
+  return ((data || []) as unknown as PublicMemberRow[]).map(toMember);
 }
 
 export async function fetchMember(sb: SupabaseClient, orgId: string, slug: string): Promise<Member | null> {
   const { data, error } = await sb
-    .from("members")
+    .from("public_members")
     .select(PUBLIC_MEMBER_COLUMNS)
     .eq("organization_id", orgId)
     .eq("slug", slug)
     .eq("status", "active")
-    .eq("public_profile", true)
     .single();
   if (error || !data) return null;
-  const [member] = await withPublicContact(sb, [data as unknown as PublicMemberRow]);
-  return member ?? null;
+  return toMember(data as unknown as PublicMemberRow);
 }
 
 export async function fetchTestimonials(sb: SupabaseClient, orgId: string, featuredOnly = false): Promise<Testimonial[]> {
@@ -215,7 +208,7 @@ export async function fetchUpcomingSpeakers(sb: SupabaseClient, orgId: string): 
     .from("speaker_queue")
     .select(`
       assigned_date, presentation_topic, presentation_category,
-      member:members(slug, full_name, first_name, headshot_url, profession_category, business_name, public_profile)
+      member:public_members(slug, full_name, first_name, headshot_url, profession_category, business_name)
     `)
     .eq("organization_id", orgId)
     .eq("status", "scheduled")
@@ -223,8 +216,8 @@ export async function fetchUpcomingSpeakers(sb: SupabaseClient, orgId: string): 
     .order("assigned_date", { ascending: true })
     .limit(4);
   if (error) return [];
-  return (data as Array<UpcomingSpeaker & { member: { public_profile?: boolean } | null }>)
-    .filter((s) => s.member && s.member.public_profile !== false) as UpcomingSpeaker[];
+  // A speaker who is not listed for everyone comes back with no member (the view holds listed members only): left out.
+  return (data as unknown as UpcomingSpeaker[]).filter((s) => s.member);
 }
 
 export async function fetchPublicEvents(sb: SupabaseClient, orgId: string): Promise<PublicEvent[]> {
