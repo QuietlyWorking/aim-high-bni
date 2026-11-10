@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://aimhighbni.com/sitemap-index.xml
